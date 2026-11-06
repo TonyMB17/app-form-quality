@@ -149,4 +149,19 @@ PRUEBA_USABILIDAD.md contiene la guía para el usuario que realizará la evaluac
 - Conserva filtros autorizados, actualización automática y denominadores existentes. Los motivos de exclusión pueden solaparse y no se suman.
 - Validación: build TypeScript/Vite correcto; 19 pruebas / 329 aserciones; 6 casos de límites del semáforo; navegación real y vista móvil de 390 px sin desbordamiento horizontal.
 
+## Replicar la base de datos en otra PC
+
+El esquema versionado se encuentra en `database/schema/mysql-schema.sql`. Es un volcado de estructura MySQL sin cuentas, establecimientos, respuestas ni otros datos de aplicación; solo conserva los nombres y lotes de migración que Laravel necesita para reconocer el esquema. Al ejecutar `php artisan migrate` en una base vacía, Laravel carga automáticamente este esquema y luego aplica cualquier migración nueva. Los archivos de `database/migrations` siguen siendo la fuente de cambios futuros.
+
+Para una instalación nueva, configura una base MySQL vacía en el `.env` local (no copies el `.env` de otra PC), después ejecuta:
+
+```powershell
+php artisan config:clear
+php artisan migrate
+php artisan establecimientos:importar "Listado de Establecimientos.xls"
+php artisan db:seed
+```
+
+La importación y el seeder cargan el catálogo RENIPRESS y los ítems del instrumento; el seeder también crea la cuenta digitadora ficticia solo en `local` o `testing`. No se exportan encuestas ni credenciales de las cuentas existentes. Si se agrega una migración, se debe conservar y ejecutar con `php artisan migrate` en cada instalación.
+
 Resultados: pestañas General, Microredes y Establecimientos; comparación por dimensiones o 22 preguntas, búsqueda, semáforo y conteos por celda. Agregados limitados por filtros y autorización; incluye unidades sin encuestas. Pruebas del tablero: 97 aserciones; navegación de pestañas y móvil verificados.
