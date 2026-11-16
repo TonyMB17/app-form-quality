@@ -55,12 +55,12 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_user_without_assignment_or_wrong_role_cannot_access_digitador_profile(): void
+    public function test_administrators_are_redirected_and_unassigned_digitadores_are_blocked(): void
     {
         $user = User::sole();
         $user->role = 'administrador';
         $user->save();
-        $this->actingAs($user)->get('/mi-establecimiento')->assertForbidden();
+        $this->actingAs($user)->get('/mi-establecimiento')->assertRedirect('/tablero');
         $user->role = 'digitador';
         $user->establecimiento_id = null;
         $user->save();

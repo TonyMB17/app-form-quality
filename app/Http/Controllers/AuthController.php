@@ -51,6 +51,10 @@ class AuthController extends Controller
     public function profile(Request $request)
     {
         $user = $request->user();
+        if ($user->role === 'administrador') {
+            return redirect()->route('tablero');
+        }
+
         abort_unless($user->role === 'digitador' && $user->establecimiento, 403, 'No tienes un establecimiento asignado para digitar.');
 
         $own = \Illuminate\Support\Facades\DB::table('encuestas')->where('user_id', $user->id)->where('establecimiento_id', $user->establecimiento_id);
