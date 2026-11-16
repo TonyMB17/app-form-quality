@@ -35,3 +35,6 @@ La vista previa permite abrir el visor con zoom sin salir del formulario. Se añ
 
 ## Dependencia entre expectativas y percepciones — 16/11/2026
 Cuando la expectativa es No aplica o Sin respuesta, su percepción queda desactivada con explicación y conserva el mismo motivo al guardar. Al volver a una expectativa numérica se borra la percepción automática y se requiere una nueva elección. Regla compartida por registro, edición y recuperación de borradores; servidor normaliza al crear/actualizar. Sin migración de respuestas históricas ni cambios en preguntas. Compilación y prueba de interacción para ambas opciones correctas.
+
+## Metas por establecimiento — 16/11/2026
+Cada establecimiento tiene una meta configurable de 5 encuestas por digitador y periodo. El módulo de administración permite cambiarla para todos los digitadores del establecimiento dentro del ámbito autorizado y consultar el avance individual por periodo; alcanzarla no impide registrar más encuestas. La pantalla de inicio del digitador muestra su avance personal. Pruebas: valor predeterminado, permisos y ámbito, validación de cambios, persistencia al reimportar establecimientos y conteo individual por establecimiento/periodo. Comprobación: 2 pruebas / 102 aserciones y compilación de producción correctas.

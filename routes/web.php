@@ -10,6 +10,8 @@ Route::middleware('guest')->group(function () {
     Route::post('/ingresar', [\App\Http\Controllers\AuthController::class, 'store'])->middleware('throttle:20,1');
 });
 Route::middleware('auth')->group(function () {
+    Route::get('/administracion/metas', [\App\Http\Controllers\Administracion\MetaController::class, 'index']);
+    Route::put('/administracion/metas/{establecimiento}', [\App\Http\Controllers\Administracion\MetaController::class, 'update'])->whereNumber('establecimiento');
     Route::get('/encuestas/{encuesta}/foto', [\App\Http\Controllers\EncuestaController::class, 'photo'])->whereNumber('encuesta');
     Route::get('/administracion/usuarios', [\App\Http\Controllers\Administracion\UsuarioController::class, 'index']);
     Route::get('/administracion/usuarios/nuevo', [\App\Http\Controllers\Administracion\UsuarioController::class, 'create']);
