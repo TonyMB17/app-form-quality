@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import { AppHeader } from '../../../components/Interface';
 
 type Usuario = {
@@ -13,7 +13,8 @@ type Page<T> = { data: T[]; total: number; current_page: number; last_page: numb
 type Eess = { id: number; nombre: string; codigo_renipress: string };
 type Administrador = { id: number; name: string; dni: string | null };
 
-export default function ListaUsuarios({ usuarios, administradores, establecimientos }: { usuarios: Page<Usuario>; administradores: Administrador[]; establecimientos: Eess[] }) {
+export default function ListaUsuarios({ usuarios, administradores, establecimientos, filtros }: { filtros: {buscar?:string;eess?:number}; usuarios: Page<Usuario>; administradores: Administrador[]; establecimientos: Eess[] }) {
+    const form = useForm({buscar:filtros.buscar ?? '',eess:filtros.eess ?? ''});
     return <><AppHeader admin active="usuarios" /><Head title="Gestión de usuarios" /><main className="workspace user-management">
         <p className="eyebrow">ADMINISTRACIÓN</p>
         <div className="page-heading"><div><h1>Gestión de usuarios</h1><p>Cuentas digitadoras de los establecimientos de tu ámbito autorizado.</p></div><Link className="primary" href="/administracion/usuarios/nuevo">Crear usuario</Link></div>
@@ -27,8 +28,9 @@ export default function ListaUsuarios({ usuarios, administradores, establecimien
             </article>)}</div>
             <p className="admin-account-hint">Para cambiar la contraseña se solicitará la contraseña actual del administrador que confirma el cambio.</p>
         </section>
+        <form className="auth-card account-filters" onSubmit={e=>{e.preventDefault();form.get('/administracion/usuarios',{preserveState:true});}}><div><label htmlFor="user-search">Nombre o DNI</label><input type="search" id="user-search" placeholder="Buscar digitador" value={form.data.buscar} onChange={e=>form.setData('buscar',e.target.value)}/></div><div><label htmlFor="user-eess">Establecimiento</label><select id="user-eess" value={form.data.eess} onChange={e=>form.setData('eess',e.target.value)}><option value="">Todos los autorizados</option>{establecimientos.map(e=><option key={e.id} value={e.id}>{e.codigo_renipress} · {e.nombre}</option>)}</select></div><div className="filter-actions"><button className="primary" disabled={form.processing}>Buscar</button><Link href="/administracion/usuarios">Limpiar</Link></div>{Object.values(form.errors).map(e=><p className="error" role="alert" key={e}>{e}</p>)}</form>
         <p className="result-count">{usuarios.total} {usuarios.total === 1 ? 'usuario' : 'usuarios'} · {establecimientos.length} establecimientos autorizados</p>
-        {usuarios.data.length === 0 ? <section className="empty-state"><h2>No hay usuarios digitadores</h2><p>Crea una cuenta para asignarla a un establecimiento autorizado.</p></section> : <div className="table-wrap user-table"><table><thead><tr><th>Usuario (DNI)</th><th>Nombre</th><th>Establecimiento</th><th>Encuestas</th><th>Acción</th></tr></thead><tbody>{usuarios.data.map(user => <tr key={user.id}><td data-label="Usuario (DNI)"><strong>{user.dni}</strong></td><td data-label="Nombre">{user.name}</td><td data-label="Establecimiento">{user.codigo_renipress} · {user.establecimiento}</td><td data-label="Encuestas">{user.encuestas_count}</td><td data-label="Acción"><Link className="detail-link" href={`/administracion/usuarios/${user.id}/editar`}>Editar cuenta</Link></td></tr>)}</tbody></table></div>}
+        {usuarios.data.length === 0 ? <section className="empty-state"><h2>{filtros.buscar || filtros.eess ? "No hay coincidencias" : "No hay usuarios digitadores"}</h2><p>{filtros.buscar || filtros.eess ? "Prueba otro nombre, DNI o establecimiento." : "Crea una cuenta para asignarla a un establecimiento autorizado."}</p><Link className="detail-link" href={filtros.buscar || filtros.eess ? "/administracion/usuarios" : "/administracion/usuarios/nuevo"}>{filtros.buscar || filtros.eess ? "Limpiar filtros" : "Crear usuario"}</Link></section> : <div className="table-wrap user-table"><table><thead><tr><th>Usuario (DNI)</th><th>Nombre</th><th>Establecimiento</th><th>Encuestas</th><th>Acción</th></tr></thead><tbody>{usuarios.data.map(user => <tr key={user.id}><td data-label="Usuario (DNI)"><strong>{user.dni}</strong></td><td data-label="Nombre">{user.name}</td><td data-label="Establecimiento">{user.codigo_renipress} · {user.establecimiento}</td><td data-label="Encuestas">{user.encuestas_count}</td><td data-label="Acción"><Link className="detail-link" href={`/administracion/usuarios/${user.id}/editar`}>Editar cuenta</Link></td></tr>)}</tbody></table></div>}
         <nav className="actions pagination" aria-label="Paginación">{usuarios.prev_page_url && <Link href={usuarios.prev_page_url}>Anterior</Link>}<span>Página {usuarios.current_page} de {usuarios.last_page}</span>{usuarios.next_page_url && <Link href={usuarios.next_page_url}>Siguiente</Link>}</nav>
     </main></>;
 }

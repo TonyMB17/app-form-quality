@@ -23,18 +23,22 @@ class UsuarioController extends Controller
     {
         $ids = $this->establecimientosPermitidos($request);
 
+        $filters = $request->validate(['buscar'=>['nullable','string','max:100'], 'eess'=>['nullable','integer',Rule::in($ids)]]);
         $usuarios = User::query()
             ->where('role', 'digitador')
             ->whereIn('establecimiento_id', $ids)
             ->join('establecimientos', 'establecimientos.id', '=', 'users.establecimiento_id')
             ->select('users.id', 'users.name', 'users.dni', 'users.establecimiento_id', 'establecimientos.nombre as establecimiento', 'establecimientos.codigo_renipress')
             ->addSelect(['encuestas_count' => DB::table('encuestas')->selectRaw('count(*)')->whereColumn('encuestas.user_id', 'users.id')])
+            ->when(!empty($filters['buscar']), fn ($q) => $q->where(fn ($search) => $search->where('users.name','like','%'.$filters['buscar'].'%')->orWhere('users.dni','like','%'.$filters['buscar'].'%')))
+            ->when(!empty($filters['eess']), fn ($q) => $q->where('users.establecimiento_id',$filters['eess']))
             ->orderBy('establecimientos.nombre')
             ->orderBy('users.name')
             ->paginate(20)
             ->withQueryString();
 
         return Inertia::render('Administracion/Usuarios/Lista', [
+            'filtros' => $filters,
             'usuarios' => $usuarios,
             'administradores' => User::query()->where('role', 'administrador')->orderBy('name')->get(['id', 'name', 'dni']),
             'establecimientos' => DB::table('establecimientos')->whereIn('id', $ids)->orderBy('nombre')->get(['id', 'nombre', 'codigo_renipress']),

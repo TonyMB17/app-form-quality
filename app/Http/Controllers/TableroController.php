@@ -2,7 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Support\AmbitoEncuestas;
-use App\Support\Instrumento;
+use App\Support\EncuestaItems;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -18,12 +18,21 @@ class TableroController extends Controller
         $filters = $r->validate([
             'microred' => ['nullable', Rule::in($catalogo->pluck('microred')->unique()->all())],
             'eess' => ['nullable', 'integer', Rule::in($ids)],
-            'version' => ['nullable', Rule::in(['abancay-2026', 'servqual-provisional-v1'])],
         ]);
+        $eessFiltrados = $catalogo->filter(fn ($eess) =>
+            (empty($filters['microred']) || $eess->microred === $filters['microred'])
+            && (empty($filters['eess']) || $eess->id == $filters['eess'])
+        )->pluck('id');
+        $digitadores = DB::table('users as u')->join('establecimientos as s', 's.id', '=', 'u.establecimiento_id')
+            ->where('u.role', 'digitador')->whereIn('s.id', $eessFiltrados)
+            ->orderBy('u.name')->get(['u.id', 'u.name', 's.nombre as establecimiento', 's.microred']);
+        $filters = array_merge($filters, $r->validate([
+            'digitador' => ['nullable', 'integer', Rule::in($digitadores->pluck('id')->all())],
+        ]));
         $q = DB::table('encuestas as e')->join('establecimientos as s', 's.id', '=', 'e.establecimiento_id')->whereIn('s.id', $ids);
         if (!empty($filters['microred'])) $q->where('s.microred', $filters['microred']);
         if (!empty($filters['eess'])) $q->where('s.id', $filters['eess']);
-        if (!empty($filters['version'])) $q->where('e.version_instrumento', $filters['version']);
+        if (!empty($filters['digitador'])) $q->where('e.user_id', $filters['digitador']);
         $total = (clone $q)->count();
         $eessTotal = (clone $q)->distinct()->count('s.id');
         $numeric = "r.expectativa IN ('1','2','3','4','5','6','7') AND r.percepcion IN ('1','2','3','4','5','6','7')";
@@ -37,7 +46,7 @@ class TableroController extends Controller
         $items = array_map(function ($item) use ($counts) {
             $c = $counts->get($item['numero']);
             return $item + ['validos' => (int) ($c->validos ?? 0), 'satisfechos' => (int) ($c->satisfechos ?? 0), 'sin_respuesta' => (int) ($c->sin_respuesta ?? 0), 'incompletos' => (int) ($c->incompletos ?? 0), 'no_aplica' => (int) ($c->no_aplica ?? 0)];
-        }, Instrumento::items($filters['version'] ?? 'abancay-2026'));
+        }, EncuestaItems::all());
         $dimensions = collect($items)->groupBy('dimension')->map(fn ($rows, $name) => ['nombre' => $name, 'validos' => $rows->sum('validos'), 'satisfechos' => $rows->sum('satisfechos')])->values();
         // Aggregate only surveys in the same authorized, filtered query as the overview.
         $groupCounts = DB::table('respuestas as r')->join('encuestas as ge', 'ge.id', '=', 'r.encuesta_id')
@@ -64,10 +73,9 @@ class TableroController extends Controller
         $demographics = [];
         foreach ($demographicLabels as $field => $labels) {
             $buckets = [];
-            $countsByValue = (clone $q)->select("e.{$field} as valor", 'e.version_instrumento')->selectRaw('COUNT(*) as total')->groupBy("e.{$field}", 'e.version_instrumento')->get();
+            $countsByValue = (clone $q)->select("e.{$field} as valor")->selectRaw('COUNT(*) as total')->groupBy("e.{$field}")->get();
             foreach ($countsByValue as $row) {
-                $options = $field === 'seguro' && $row->version_instrumento === 'servqual-provisional-v1' ? ['SIS', 'SOAT', 'Ninguno'] : $labels;
-                $label = $options[(int) $row->valor - 1] ?? 'Sin dato';
+                $label = $labels[(int) $row->valor - 1] ?? 'Sin dato';
                 $buckets[$label] = ($buckets[$label] ?? 0) + (int) $row->total;
             }
             $demographics[$field] = collect($buckets)->map(fn ($n, $label) => ['nombre' => $label, 'total' => $n])->values();
@@ -76,13 +84,15 @@ class TableroController extends Controller
         $accounts = DB::table('users as u')->join('establecimientos as s', 's.id', '=', 'u.establecimiento_id')
             ->where('u.role', 'digitador')->whereIn('s.id', $comparison->pluck('id'))
             ->orderBy('u.name')->get(['u.id', 'u.name', 's.nombre as establecimiento', 's.microred'])
+            ->when(!empty($filters['digitador']), fn ($users) => $users->where('id', $filters['digitador']))
             ->map(fn ($u) => ['id' => $u->id, 'nombre' => $u->name, 'establecimiento' => $u->establecimiento, 'microred' => $u->microred, 'encuestas' => (int) ($byUser[$u->id] ?? 0)]);
         return Inertia::render('Tablero', [
             'datos_generales' => ['distribuciones' => $demographics, 'cuentas' => $accounts, 'microredes' => (clone $q)->select('s.microred as nombre')->selectRaw('COUNT(*) as total')->groupBy('s.microred')->get()],
             'filtros' => $filters,
+            'digitadores' => $digitadores->map(fn ($u) => ['id' => $u->id, 'nombre' => $u->name, 'establecimiento' => $u->establecimiento]),
             'comparacion' => $comparison, 'catalogo' => $catalogo, 'items' => $items, 'dimensiones' => $dimensions,
             'resumen' => ['encuestas' => $total, 'establecimientos' => $eessTotal, 'validos' => array_sum(array_column($items, 'validos')), 'satisfechos' => array_sum(array_column($items, 'satisfechos')), 'excluidos' => $total * 22 - array_sum(array_column($items, 'validos'))],
-            'encuestas' => (clone $q)->select('e.id', 'e.numero', 'e.fecha', 'e.version_instrumento', 's.nombre as establecimiento')->orderByDesc('e.id')->paginate(15)->withQueryString(),
+            'encuestas' => (clone $q)->select('e.id', 'e.numero', 'e.fecha', 's.nombre as establecimiento')->orderByDesc('e.id')->paginate(15)->withQueryString(),
             'actualizado' => now('America/Lima')->format('d/m/Y H:i:s'),
             'es_digitador' => false,
         ]);

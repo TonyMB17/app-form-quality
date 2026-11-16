@@ -4,7 +4,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-class InstrumentoSeeder extends Seeder
+class EncuestaItemsSeeder extends Seeder
 {
     public function run(): void
     {
@@ -13,7 +13,7 @@ class InstrumentoSeeder extends Seeder
             DB::table('items')->updateOrInsert(['numero' => $n], ['dimension' => $dimension]);
         }
         if (app()->environment(['local', 'testing'])) {
-            DB::table('periodos')->insertOrIgnore(['nombre' => 'Piloto técnico 2026', 'inicio' => '2026-01-01', 'fin' => '2026-12-31', 'habilitado' => true]);
+            DB::table('periodos')->insertOrIgnore(['nombre' => 'Piloto técnico 2026', 'inicio' => '2026-01-01', 'fin' => '2026-12-31', 'habilitado' => true, 'estado' => 'publicado', 'abre_at' => '2026-01-01 00:00:00', 'cierra_at' => '2027-01-01 00:00:00']);
         }
     }
 }

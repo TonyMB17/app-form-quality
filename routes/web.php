@@ -10,6 +10,7 @@ Route::middleware('guest')->group(function () {
     Route::post('/ingresar', [\App\Http\Controllers\AuthController::class, 'store'])->middleware('throttle:20,1');
 });
 Route::middleware('auth')->group(function () {
+    Route::get('/encuestas/{encuesta}/foto', [\App\Http\Controllers\EncuestaController::class, 'photo'])->whereNumber('encuesta');
     Route::get('/administracion/usuarios', [\App\Http\Controllers\Administracion\UsuarioController::class, 'index']);
     Route::get('/administracion/usuarios/nuevo', [\App\Http\Controllers\Administracion\UsuarioController::class, 'create']);
     Route::post('/administracion/usuarios', [\App\Http\Controllers\Administracion\UsuarioController::class, 'store']);
@@ -17,6 +18,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/administracion/usuarios/{usuario}', [\App\Http\Controllers\Administracion\UsuarioController::class, 'update'])->whereNumber('usuario');
     Route::get('/administracion/encuesta', [\App\Http\Controllers\SurveySettingsController::class, 'index']);
     Route::put('/administracion/encuesta', [\App\Http\Controllers\SurveySettingsController::class, 'update']);
+    Route::delete('/administracion/encuesta/{periodo}', [\App\Http\Controllers\SurveySettingsController::class, 'destroy'])->whereNumber('periodo');
     Route::get('/encuestas/{encuesta}/editar', [\App\Http\Controllers\EncuestaController::class, 'edit'])->whereNumber('encuesta');
     Route::put('/encuestas/{encuesta}', [\App\Http\Controllers\EncuestaController::class, 'update'])->whereNumber('encuesta');
 

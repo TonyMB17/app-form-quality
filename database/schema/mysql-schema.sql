@@ -31,7 +31,6 @@ CREATE TABLE `encuestas` (
   `periodo_id` bigint unsigned NOT NULL,
   `user_id` bigint unsigned NOT NULL,
   `numero` int unsigned NOT NULL,
-  `version_instrumento` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `fecha` date NOT NULL,
   `hora_inicio` time DEFAULT NULL,
   `hora_final` time DEFAULT NULL,

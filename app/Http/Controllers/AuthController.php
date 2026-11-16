@@ -53,7 +53,11 @@ class AuthController extends Controller
         $user = $request->user();
         abort_unless($user->role === 'digitador' && $user->establecimiento, 403, 'No tienes un establecimiento asignado para digitar.');
 
+        $own = \Illuminate\Support\Facades\DB::table('encuestas')->where('user_id', $user->id)->where('establecimiento_id', $user->establecimiento_id);
         return Inertia::render('MiEstablecimiento', [
+            'total' => (clone $own)->count(),
+            'recientes' => (clone $own)->orderByDesc('id')->limit(5)->get(['id','numero','fecha']),
+            'periodo' => \Illuminate\Support\Facades\DB::table('periodos')->get()->first(fn ($p) => \App\Support\SurveyAccess::open($p)),
             'perfil' => [
                 'nombre' => $user->name,
                 'dni' => $user->dni,

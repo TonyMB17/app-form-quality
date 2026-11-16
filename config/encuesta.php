@@ -1,9 +1,7 @@
 <?php
 
-// Transcripción del PDF FORMATO ENCUESTA RED DE SALUD ABANCAY 2026, página 2.
-// No modificar esta versión una vez utilizada; crear otra para cambios de significado.
+// Enunciados vigentes del formulario de encuesta.
 return [
-    'version' => 'abancay-2026',
     'expectativas' => [
         'Que Usted sea atendido sin diferencia alguna en relación a otras personas',
         'Que la atención se realice en orden y respetando el orden de llegada',

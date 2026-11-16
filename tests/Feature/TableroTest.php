@@ -2,7 +2,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
-use Database\Seeders\InstrumentoSeeder;
+use Database\Seeders\EncuestaItemsSeeder;
 use Database\Seeders\UsuarioPruebaSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -17,13 +17,13 @@ class TableroTest extends TestCase
     {
         parent::setUp();
         $this->artisan('establecimientos:importar', ['archivo' => base_path('Listado de Establecimientos.xls')])->assertSuccessful();
-        $this->seed([UsuarioPruebaSeeder::class, InstrumentoSeeder::class]);
+        $this->seed([UsuarioPruebaSeeder::class, EncuestaItemsSeeder::class]);
         $this->actingAs(User::sole());
         $this->periodo = DB::table('periodos')->value('id');
     }
-    private function survey(int $eess, int $numero): int
+    private function survey(int $eess, int $numero, ?int $userId = null): int
     {
-        $id = DB::table('encuestas')->insertGetId(['establecimiento_id' => $eess, 'periodo_id' => $this->periodo, 'user_id' => User::sole()->id, 'numero' => $numero, 'fecha' => '2026-11-06', 'version_instrumento' => 'abancay-2026']);
+        $id = DB::table('encuestas')->insertGetId(['establecimiento_id' => $eess, 'periodo_id' => $this->periodo, 'user_id' => $userId ?? auth()->id(), 'numero' => $numero, 'fecha' => '2026-11-06']);
         foreach (range(1,22) as $i) {
             DB::table('respuestas')->insert(['encuesta_id' => $id, 'item' => $i, 'expectativa' => $i === 4 ? 'No aplica' : ($i >= 5 ? null : '4'), 'percepcion' => $i === 1 ? '7' : ($i === 2 ? '4' : '1')]);
         }
@@ -43,10 +43,44 @@ class TableroTest extends TestCase
             ->has('datos_generales.cuentas', 1)->where('datos_generales.cuentas.0.encuestas', 2)->where('datos_generales.microredes.0.total', 2)->where('datos_generales.distribuciones.sexo.0.total', 2)->has('comparacion', 1)->where('comparacion.0.encuestas', 2)->has('comparacion.0.items', 22)->where('comparacion.0.items.0.validos', 2)->where('comparacion.0.items.0.satisfechos', 2)->where('comparacion.0.items.2.satisfechos', 0)->where('comparacion.0.items.3.validos', 0)
             ->where('encuestas.total', 2)->has('catalogo', 1)->where('items.0.satisfechos', 2)->where('items.1.satisfechos', 2)->where('items.2.satisfechos', 0)
             ->where('items.3.no_aplica', 2)->where('items.4.incompletos', 2)->where('dimensiones.0.validos', 6)->where('dimensiones.1.validos', 0));
-        $this->get('/tablero?version=servqual-provisional-v1')->assertInertia(fn (AssertableInertia $p) => $p->where('resumen.encuestas', 0)->where('resumen.validos', 0)->where('encuestas.total', 0)->has('comparacion', 1)->where('comparacion.0.encuestas', 0)->where('comparacion.0.items.0.validos', 0));
+        $this->get('/tablero')->assertInertia(fn (AssertableInertia $p) => $p->missing('filtros.version')->where('resumen.encuestas', 2));
         $other = DB::table('establecimientos')->where('id', '!=', $own)->value('id');
         $this->get('/tablero?eess='.$other)->assertSessionHasErrors('eess');
     }
+
+    public function test_dashboard_filter_scopes_surveys_to_an_authorized_digitador(): void
+    {
+        $eess = User::sole()->establecimiento_id;
+        $this->survey($eess, 1);
+        $otherDigitador = User::create(['name' => 'Digitador alterno', 'dni' => '99000020', 'password' => 'test-password']);
+        $otherDigitador->role = 'digitador';
+        $otherDigitador->establecimiento_id = $eess;
+        $otherDigitador->save();
+        $this->survey($eess, 2, $otherDigitador->id);
+
+        $this->artisan('piloto:administrador', ['--eess' => [DB::table('establecimientos')->where('id', $eess)->value('codigo_renipress')]])->assertSuccessful();
+        $this->actingAs(User::where('role', 'administrador')->firstOrFail());
+
+        $this->get('/tablero?digitador='.$otherDigitador->id)->assertInertia(fn (AssertableInertia $p) => $p
+            ->where('filtros.digitador', (string) $otherDigitador->id)
+            ->where('resumen.encuestas', 1)
+            ->where('resumen.validos', 3)
+            ->where('resumen.satisfechos', 2)
+            ->where('encuestas.total', 1)
+            ->where('encuestas.data.0.numero', 2)
+            ->has('digitadores', 2)
+            ->has('datos_generales.cuentas', 1)
+            ->where('datos_generales.cuentas.0.id', $otherDigitador->id)
+            ->where('datos_generales.cuentas.0.encuestas', 1));
+
+        $outsideEess = DB::table('establecimientos')->where('id', '!=', $eess)->value('id');
+        $outsideDigitador = User::create(['name' => 'Digitador fuera del ámbito', 'dni' => '99000021', 'password' => 'test-password']);
+        $outsideDigitador->role = 'digitador';
+        $outsideDigitador->establecimiento_id = $outsideEess;
+        $outsideDigitador->save();
+        $this->get('/tablero?digitador='.$outsideDigitador->id)->assertSessionHasErrors('digitador');
+    }
+
     public function test_admin_must_have_explicit_scope_and_detail_uses_it(): void
     {
         $user = User::sole();

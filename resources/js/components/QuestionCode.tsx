@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { Info } from 'lucide-react';
+import { useState, useEffect, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { useLayoutEffect, useRef } from 'react';
 export type Question = { numero: number; expectativa: string | null; percepcion: string | null };
-export default function QuestionCode({ question, version }: { question?: Question; version?: string }) {
+export default function QuestionCode({ question }: { question?: Question }) {
+    const descriptionId = useId();
     const [open, setOpen] = useState(false);
     const [position, setPosition] = useState({ left: 0, top: 0, ready: false });
     const trigger = useRef<HTMLButtonElement>(null);
@@ -30,6 +32,7 @@ export default function QuestionCode({ question, version }: { question?: Questio
             window.removeEventListener('scroll', updatePosition, true);
         };
     }, [open, question?.numero]);
+    useEffect(() => () => { if (closeTimer.current) clearTimeout(closeTimer.current); }, []);
     function keepOpen() {
         if (closeTimer.current) clearTimeout(closeTimer.current);
     }
@@ -42,7 +45,7 @@ export default function QuestionCode({ question, version }: { question?: Questio
     }
     if (!question) return null;
     return <span className="question-code" onMouseEnter={keepOpen} onMouseLeave={closeSoon} onFocus={() => setOpen(true)} onBlur={closeSoon} onKeyDown={e => { if (e.key === 'Escape') { close(); e.stopPropagation(); } }}>
-        <button ref={trigger} type="button" aria-expanded={open} aria-label={`Ver pregunta P${String(question.numero).padStart(2, '0')}`} onMouseEnter={keepOpen} onClick={() => setOpen(true)}>P{String(question.numero).padStart(2, '0')} <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="9" /><path d="M12 11v6" /><circle cx="12" cy="7.5" r=".8" fill="currentColor" stroke="none" /></svg></button>
-        {open && createPortal(<span ref={popover} className="question-popover question-popover-portal" role="note" style={{ left: position.left, top: position.top, visibility: position.ready ? 'visible' : 'hidden' }} onMouseEnter={keepOpen} onMouseLeave={closeSoon}><strong>Pregunta {question.numero}</strong>{!version && <small>Enunciado de referencia: Abancay 2026. El resultado incluye todas las versiones.</small>}{question.expectativa ? <><span><b>Expectativa</b>{question.expectativa}</span><span><b>Percepción</b>{question.percepcion}</span></> : <span>No hay enunciados documentados para esta versión.</span>}</span>, document.body)}
+        <button ref={trigger} type="button" aria-expanded={open} aria-describedby={open ? descriptionId : undefined} aria-label={`Ver pregunta P${String(question.numero).padStart(2, '0')}`} onMouseEnter={() => { keepOpen(); setOpen(true); }} onClick={() => setOpen(true)}>P{String(question.numero).padStart(2, '0')} <Info size={16} aria-hidden="true" /></button>
+        {open && createPortal(<span id={descriptionId} ref={popover} className="question-popover question-popover-portal" role="note" style={{ left: position.left, top: position.top, visibility: position.ready ? 'visible' : 'hidden' }} onMouseEnter={keepOpen} onMouseLeave={closeSoon}><strong>Pregunta {question.numero}</strong><span><b>Expectativa</b>{question.expectativa}</span><span><b>Percepción</b>{question.percepcion}</span></span>, document.body)}
     </span>;
 }

@@ -19,6 +19,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Railway terminates HTTPS at its reverse proxy.
+        if ($this->app->environment('production')) {
+            \Illuminate\Http\Middleware\TrustProxies::at('*');
+        }
     }
 }

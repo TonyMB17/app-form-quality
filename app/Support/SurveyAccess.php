@@ -8,10 +8,13 @@ class SurveyAccess {
         $query = DB::table('survey_settings')->where('id', 1);
         return ($lock ? $query->lockForUpdate() : $query)->first();
     }
-    public static function open(object $settings): bool {
-        return $settings->published && (!$settings->closes_at || now('America/Lima')->lt(CarbonImmutable::parse($settings->closes_at, 'America/Lima')));
+    public static function open(object $period): bool {
+        $start = $period->abre_at ?? $period->inicio.' 00:00:00';
+        $end = $period->cierra_at ?? $period->fin.' 23:59:59';
+        return $period->habilitado && $period->estado === 'publicado' && now('America/Lima')->gte(CarbonImmutable::parse($start, 'America/Lima')) && now('America/Lima')->lt(CarbonImmutable::parse($end, 'America/Lima'));
     }
-    public static function check(): void {
-        if (!self::open(self::settings(true))) throw ValidationException::withMessages(['acceso' => 'La encuesta está cerrada o el plazo ha finalizado. Tus cambios no se guardaron.']);
+    public static function check(int $id): void {
+        $period = DB::table('periodos')->where('id',$id)->lockForUpdate()->first();
+        if (!$period || !self::open($period)) throw ValidationException::withMessages(['acceso' => 'El periodo no está abierto. Los cambios no se guardaron.']);
     }
 }

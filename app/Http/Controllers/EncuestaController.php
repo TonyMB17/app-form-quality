@@ -11,9 +11,23 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 use Carbon\CarbonImmutable;
 use App\Support\SurveyAccess;
+use Illuminate\Support\Facades\Storage;
 
 class EncuestaController extends Controller
 {
+    private function normalizeDependentAnswers(Request $r): void
+    {
+        $answers = $r->input('respuestas');
+        if (!is_array($answers)) return;
+        foreach ($answers as &$answer) {
+            if (is_array($answer) && in_array($answer['expectativa'] ?? null, ['No aplica', 'Sin respuesta'], true)) {
+                $answer['percepcion'] = $answer['expectativa'];
+            }
+        }
+        unset($answer);
+        $r->merge(['respuestas' => $answers]);
+    }
+
     private function eess(Request $r)
     {
         abort_unless($r->user()->role === 'digitador' && $r->user()->establecimiento, 403);
@@ -46,22 +60,22 @@ class EncuestaController extends Controller
     public function create(Request $r)
     {
         $eess = $this->eess($r);
-        $existing = DB::table('encuestas')->where('user_id', $r->user()->id)->orderByDesc('id')->first();
-        if ($existing) return redirect('/encuestas/'.$existing->id);
-        $periodos = DB::table('periodos')->where('habilitado', true)->where('inicio', '<=', now()->toDateString())->where('fin', '>=', now()->toDateString())->get();
-        $token = SurveyAccess::open(SurveyAccess::settings()) && $periodos->count() === 1 ? Crypt::encryptString(json_encode(['id' => (string) Str::uuid(), 'user' => $r->user()->id, 'eess' => $eess->id, 'periodo' => $periodos->first()->id, 'inicio' => now()->toIso8601String(), 'version' => 'abancay-2026'])) : null;
+        $periodos = DB::table('periodos')->get()->filter(fn ($p) => SurveyAccess::open($p))->values();
+        $token = $periodos->count() === 1 ? Crypt::encryptString(json_encode(['id' => (string) Str::uuid(), 'user' => $r->user()->id, 'eess' => $eess->id, 'periodo' => $periodos->first()->id, 'inicio' => now()->toIso8601String()])) : null;
         return Inertia::render('Encuestas/Formulario', [
             'eess' => $eess->only(['nombre', 'codigo_renipress', 'microred']),
             'inicio_token' => $token,
             'draft_key' => 'servqual-draft-v1-'.$r->user()->id.'-'.$eess->id,
-            'items' => \App\Support\Instrumento::items('abancay-2026'),
+            'items' => \App\Support\EncuestaItems::all(),
         ]);
     }
 
     public function store(Request $r)
     {
+        $this->normalizeDependentAnswers($r);
         $eess = $this->eess($r);
         $rules = [
+            'foto' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:1536', 'dimensions:max_width=10000,max_height=10000'],
             'establecimiento_id' => ['prohibited'], 'user_id' => ['prohibited'],
             'inicio_token' => ['required', 'string'],
             'periodo_id' => ['prohibited'], 'numero' => ['prohibited'], 'fecha' => ['prohibited'],
@@ -86,16 +100,20 @@ class EncuestaController extends Controller
         if (($data['personal'] ?? null) != 6) { $data['personal_otro'] = null; }
         abort_unless($inicio['user'] === $r->user()->id && $inicio['eess'] === $eess->id, 403);
         unset($data['establecimiento_id'], $data['user_id'], $data['inicio_token'], $data['periodo_id'], $data['numero'], $data['fecha'], $data['hora_inicio'], $data['hora_final']);
+        $photo = $data['foto']; unset($data['foto']);
+        $photoPath = null;
         try {
-            $id = DB::transaction(function () use ($data, $eess, $r, $inicio) {
-                SurveyAccess::check();
+            $id = DB::transaction(function () use ($data, $eess, $r, $inicio, $photo, &$photoPath) {
+                SurveyAccess::check((int) $inicio['periodo']);
                 DB::table('users')->where('id', $r->user()->id)->lockForUpdate()->first();
                 DB::table('establecimientos')->where('id', $eess->id)->lockForUpdate()->first();
                 $existente = DB::table('encuestas')->where('envio_id', $inicio['id'])->first();
                 if ($existente) { return $existente->id; }
-                if (DB::table('encuestas')->where('user_id', $r->user()->id)->exists()) throw ValidationException::withMessages(['acceso' => 'Ya enviaste tu encuesta. Abre tu encuesta registrada para modificar las respuestas.']);
                 $periodo = DB::table('periodos')->where('id', $inicio['periodo'])->lockForUpdate()->first();
                 if (! $periodo || ! $periodo->habilitado) { throw ValidationException::withMessages(['inicio_token' => 'El periodo ya no admite registros.']); }
+                $photoPath = $photo->store('encuestas-fotos', 'local');
+                if (!$photoPath) throw new \RuntimeException('No se pudo guardar la fotografía.');
+                $data['foto_path'] = $photoPath;
                 $started = CarbonImmutable::parse($inicio['inicio'])->setTimezone('America/Lima');
                 $data['periodo_id'] = $periodo->id;
                 $data['numero'] = 1 + (int) DB::table('encuestas')->where('establecimiento_id', $eess->id)->where('periodo_id', $periodo->id)->max('numero');
@@ -104,13 +122,15 @@ class EncuestaController extends Controller
                 $data['hora_inicio'] = $started->format('H:i');
                 $data['hora_final'] = now('America/Lima')->format('H:i');
                 $respuestas = $data['respuestas']; unset($data['respuestas']);
-                $id = DB::table('encuestas')->insertGetId($data + ['establecimiento_id' => $eess->id, 'user_id' => $r->user()->id, 'version_instrumento' => $inicio['version'] ?? 'servqual-provisional-v1', 'created_at' => now(), 'updated_at' => now()]);
+                $id = DB::table('encuestas')->insertGetId($data + ['establecimiento_id' => $eess->id, 'user_id' => $r->user()->id, 'created_at' => now(), 'updated_at' => now()]);
                 foreach ($respuestas as $respuesta) {
                     DB::table('respuestas')->insert(['encuesta_id' => $id, 'item' => $respuesta['item'], 'expectativa' => $respuesta['expectativa'] ?? null, 'percepcion' => $respuesta['percepcion'] ?? null]);
                 }
                 return $id;
             });
-        } catch (UniqueConstraintViolationException $e) {
+        } catch (\Throwable $e) {
+            if ($photoPath) Storage::disk('local')->delete($photoPath);
+            if (!$e instanceof UniqueConstraintViolationException) throw $e;
             throw ValidationException::withMessages(['numero' => 'Ya existe una encuesta con ese número en este establecimiento y periodo.']);
         }
         return redirect()->route('encuestas.show', $id)->with('encuesta_guardada', true);
@@ -119,16 +139,17 @@ class EncuestaController extends Controller
     private function editableRecord(Request $r, int $id) {
         $eess = $this->eess($r);
         $record = DB::table('encuestas')->where('id', $id)->where('user_id', $r->user()->id)->where('establecimiento_id', $eess->id)->first();
-        abort_unless($record && $record->id === DB::table('encuestas')->where('user_id', $r->user()->id)->max('id'), 403);
+        abort_unless($record, 403);
         return $record;
     }
     public function edit(Request $r, int $encuesta) {
         $record = $this->editableRecord($r, $encuesta);
-        if (!SurveyAccess::open(SurveyAccess::settings())) return redirect('/encuestas/'.$encuesta);
-        return Inertia::render('Encuestas/Editar', ['encuesta_id' => $encuesta, 'items' => \App\Support\Instrumento::items($record->version_instrumento),
+        if (!SurveyAccess::open(DB::table('periodos')->where('id', $record->periodo_id)->first())) return redirect('/encuestas/'.$encuesta);
+        return Inertia::render('Encuestas/Editar', ['encuesta_id' => $encuesta, 'items' => \App\Support\EncuestaItems::all(),
             'respuestas' => DB::table('respuestas')->where('encuesta_id', $encuesta)->orderBy('item')->get(['item', 'expectativa', 'percepcion'])]);
     }
     public function update(Request $r, int $encuesta) {
+        $this->normalizeDependentAnswers($r);
         $this->editableRecord($r, $encuesta);
         $data = $r->validate([
             'respuestas' => ['required', 'array', 'size:22'], 'respuestas.*' => ['array:item,expectativa,percepcion'],
@@ -137,15 +158,26 @@ class EncuestaController extends Controller
             'respuestas.*.percepcion' => ['required', Rule::in(['1','2','3','4','5','6','7','No aplica','Sin respuesta'])],
         ]);
         DB::transaction(function () use ($r, $encuesta, $data) {
-            SurveyAccess::check();
+            $record = $this->editableRecord($r, $encuesta);
+            SurveyAccess::check($record->periodo_id);
+            $before = DB::table('respuestas')->where('encuesta_id', $encuesta)->orderBy('item')->get(['item','expectativa','percepcion']);
             DB::table('users')->where('id', $r->user()->id)->lockForUpdate()->first();
             $this->editableRecord($r, $encuesta);
             foreach ($data['respuestas'] as $answer) {
                 DB::table('respuestas')->updateOrInsert(['encuesta_id' => $encuesta, 'item' => $answer['item']], ['expectativa' => $answer['expectativa'], 'percepcion' => $answer['percepcion']]);
             }
+            DB::table('encuesta_cambios')->insert(['encuesta_id'=>$encuesta,'user_id'=>$r->user()->id,'antes'=>json_encode($before),'despues'=>json_encode($data['respuestas']),'created_at'=>now()]);
             DB::table('encuestas')->where('id', $encuesta)->update(['updated_at' => now()]);
         });
         return redirect('/encuestas/'.$encuesta)->with('encuesta_guardada', true);
+    }
+
+    public function photo(Request $r, int $encuesta) {
+        $ids = \App\Support\AmbitoEncuestas::ids($r->user());
+        $record = DB::table('encuestas')->where('id', $encuesta)->whereIn('establecimiento_id', $ids)
+            ->when($r->user()->role === 'digitador', fn ($q) => $q->where('user_id', $r->user()->id))->first();
+        abort_unless($record && $record->foto_path && Storage::disk('local')->exists($record->foto_path), 404);
+        return Storage::disk('local')->response($record->foto_path, 'encuesta-'.$encuesta, ['Cache-Control'=>'private, no-store', 'X-Content-Type-Options'=>'nosniff']);
     }
 
     public function show(Request $r, int $encuesta)
@@ -156,12 +188,15 @@ class EncuestaController extends Controller
             ->first();
         abort_unless($record, 404);
         $eess = \App\Models\Establecimiento::findOrFail($record->establecimiento_id);
+        $fotoUrl = $record->foto_path ? '/encuestas/'.$encuesta.'/foto' : null;
+        unset($record->foto_path);
         return Inertia::render('Encuestas/Detalle', [
+            'foto_url' => $fotoUrl,
             'eess' => $eess->only(['nombre', 'codigo_renipress', 'microred']), 'encuesta' => $record,
             'periodo' => DB::table('periodos')->where('id', $record->periodo_id)->value('nombre'),
             'respuestas' => DB::table('respuestas')->where('encuesta_id', $encuesta)->orderBy('item')->get(),
-            'items' => \App\Support\Instrumento::items($record->version_instrumento),
-            'editable' => $r->user()->role === 'digitador' && $record->user_id === $r->user()->id && $record->id === DB::table('encuestas')->where('user_id', $r->user()->id)->max('id') && SurveyAccess::open(SurveyAccess::settings()),
+            'items' => \App\Support\EncuestaItems::all(),
+            'editable' => $r->user()->role === 'digitador' && $record->user_id === $r->user()->id && SurveyAccess::open(DB::table('periodos')->where('id', $record->periodo_id)->first()),
             'es_digitador' => $r->user()->role === 'digitador',
             'guardada' => (bool) $r->session()->get('encuesta_guardada', false),
         ]);

@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
-use Database\Seeders\InstrumentoSeeder;
+use Database\Seeders\EncuestaItemsSeeder;
 use Database\Seeders\UsuarioPruebaSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -25,7 +25,7 @@ class GestionUsuariosTest extends TestCase
     {
         parent::setUp();
         $this->artisan('establecimientos:importar', ['archivo' => base_path('Listado de Establecimientos.xls')])->assertSuccessful();
-        $this->seed([UsuarioPruebaSeeder::class, InstrumentoSeeder::class]);
+        $this->seed([UsuarioPruebaSeeder::class, EncuestaItemsSeeder::class]);
 
         $this->admin = User::sole();
         $this->admin->role = 'administrador';
@@ -53,6 +53,11 @@ class GestionUsuariosTest extends TestCase
         ])->assertRedirect('/administracion/usuarios');
 
         $digitador = User::where('dni', '12345678')->firstOrFail();
+        $this->get('/administracion/usuarios?buscar=12345678')->assertInertia(fn (AssertableInertia $p) => $p->where('usuarios.total',1)->where('usuarios.data.0.dni','12345678'));
+        $this->get('/administracion/usuarios?buscar=SinCoincidencias')->assertInertia(fn (AssertableInertia $p) => $p->where('usuarios.total',0));
+        $this->get('/administracion/usuarios?eess='.$this->eessAutorizado)->assertInertia(fn (AssertableInertia $p) => $p->where('usuarios.total',1));
+        $this->get('/administracion/usuarios?eess='.$this->eessNoAutorizado)->assertSessionHasErrors('eess');
+
         $this->assertSame('digitador', $digitador->role);
         $this->assertTrue(Hash::check('Clave-inicial-123', $digitador->password));
 

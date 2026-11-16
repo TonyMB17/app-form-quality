@@ -11,9 +11,8 @@ export const campos = [
     ['personal', 'Personal que realizó la atención', ['Médico', 'Obstetra', 'Enfermera', 'Psicólogo', 'Odontólogo', 'Otros']],
 ] as const;
 export type Campo = typeof campos[number][0];
-export function etiqueta(campo: typeof campos[number], valor: unknown, version = 'abancay-2026') {
+export function etiqueta(campo: typeof campos[number], valor: unknown) {
     if (valor === null || valor === undefined || valor === '') return 'Sin respuesta';
-    if (campo[0] === 'seguro' && version === 'servqual-provisional-v1') return ['SIS', 'SOAT', 'Ninguno'][Number(valor) - 1];
     return Array.isArray(campo[2]) ? campo[2][Number(valor) - 1] : String(valor);
 }
 export function Cabecera({ eess }: { eess: Eess }) {

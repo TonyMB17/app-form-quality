@@ -32,20 +32,15 @@ class CrearEncuestasPrueba extends Command
 
         try {
             $cuentas = DB::transaction(function () use ($cantidad) {
-                $settings = SurveyAccess::settings(true);
-                if (! $settings || ! SurveyAccess::open($settings)) {
-                    throw new \RuntimeException('La encuesta debe estar publicada y dentro del plazo.');
-                }
-
                 $today = now('America/Lima')->toDateString();
                 $periodo = DB::table('periodos')->where('habilitado', true)
                     ->where('inicio', '<=', $today)->where('fin', '>=', $today)
                     ->lockForUpdate()->first();
-                if (! $periodo) {
+                if (! $periodo || !SurveyAccess::open($periodo)) {
                     throw new \RuntimeException('No hay un periodo habilitado vigente.');
                 }
                 if (DB::table('items')->count() !== 22) {
-                    throw new \RuntimeException('El instrumento debe tener sus 22 ítems cargados.');
+                    throw new \RuntimeException('El formulario debe tener sus 22 ítems cargados.');
                 }
 
                 $cuentasExistentes = User::whereBetween('dni', ['99000001', '99000010'])->get()->keyBy('dni');
@@ -99,7 +94,6 @@ class CrearEncuestasPrueba extends Command
                             'user_id' => $user->id,
                             'numero' => $numero,
                             'envio_id' => (string) Str::uuid(),
-                            'version_instrumento' => 'abancay-2026',
                             'fecha' => $inicio->toDateString(),
                             'hora_inicio' => $inicio->format('H:i:s'),
                             'hora_final' => $inicio->format('H:i:s'),
