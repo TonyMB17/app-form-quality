@@ -15,8 +15,8 @@ function TargetCard({ establishment:e, hasPeriod }: { establishment:Establishmen
             {form.errors.meta_encuestas && <p id={`target-error-${e.id}`} className="error" role="alert">{form.errors.meta_encuestas}</p>}
             {saved && <p className="target-saved" role="status"><Check size={16} aria-hidden="true"/>Meta guardada</p>}
         </form>
-        <p className="target-summary">{e.digitadores.length} digitadores · Objetivo conjunto: {e.digitadores.length * e.meta_encuestas} encuestas por periodo.</p>
-        {hasPeriod && e.digitadores.length>0 && <p>{achieved} de {e.digitadores.length} digitadores alcanzaron su meta.</p>}
+        <p className="target-summary">{e.digitadores.length} {e.digitadores.length === 1 ? 'digitador' : 'digitadores'} · Objetivo conjunto: {e.digitadores.length * e.meta_encuestas} encuestas por periodo.</p>
+        {hasPeriod && e.digitadores.length>0 && <p>{achieved} de {e.digitadores.length} {e.digitadores.length === 1 ? 'digitador alcanzó' : 'digitadores alcanzaron'} su meta.</p>}
         <details><summary>Ver avance individual ({e.digitadores.length})</summary>{!e.digitadores.length?<p className="field-hint">Todavía no hay digitadores asignados a este establecimiento.</p>:!hasPeriod?<p className="field-hint">Crea un periodo para consultar el avance.</p>:<ul className="target-users">{e.digitadores.map(u=><li key={u.id}><div><strong>{u.name}</strong><span className={`result-badge ${Number(u.realizadas)>=e.meta_encuestas?'success':'neutral'}`}>{Number(u.realizadas)>=e.meta_encuestas?'Meta alcanzada':`${Math.max(0,e.meta_encuestas-Number(u.realizadas))} pendientes`}</span></div><progress value={Math.min(Number(u.realizadas),e.meta_encuestas)} max={e.meta_encuestas} aria-label={`Avance de ${u.name}: ${u.realizadas} de ${e.meta_encuestas}`}/><span>{u.realizadas} / {e.meta_encuestas} encuestas</span></li>)}</ul>}</details>
     </article>;
 }

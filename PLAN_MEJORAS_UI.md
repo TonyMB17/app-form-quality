@@ -38,3 +38,6 @@ Cuando la expectativa es No aplica o Sin respuesta, su percepción queda desacti
 
 ## Metas por establecimiento — 16/11/2026
 Cada establecimiento tiene una meta configurable de 5 encuestas por digitador y periodo. El módulo de administración permite cambiarla para todos los digitadores del establecimiento dentro del ámbito autorizado y consultar el avance individual por periodo; alcanzarla no impide registrar más encuestas. La pantalla de inicio del digitador muestra su avance personal. Pruebas: valor predeterminado, permisos y ámbito, validación de cambios, persistencia al reimportar establecimientos y conteo individual por establecimiento/periodo. Comprobación: 2 pruebas / 102 aserciones y compilación de producción correctas.
+
+## Revisión manual de metas — 16/11/2026
+Con base aislada de pruebas, se verificaron la búsqueda con/sin coincidencias y el guardado de meta con confirmación visual. A 320, 390 y 1280 px no hay desbordamiento horizontal. La revisión detectó y corrigió el desbordamiento de navegación móvil y el plural incorrecto para un solo digitador. Suite completa: 35 pruebas / 749 aserciones; TypeScript y compilación de producción correctos.
