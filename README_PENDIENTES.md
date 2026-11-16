@@ -7,14 +7,14 @@ Completa la columna **Respuesta**. Puedes responder solo con el ID y tu decisió
 - Cada fila de digitación representa una encuesta individual. Un EESS puede registrar varias en el mismo periodo.
 - El administrador ya tiene los datos de las personas que llenarán el formulario. Creará una cuenta por persona con su DNI y EESS en una fase posterior. El MVP usa cuentas y datos ficticios.
 
-## Instrumento y reglas de captura
+## Cuestionario y reglas de captura
 
 | ID | Pregunta | Respuesta |
 | --- | --- | --- |
-| F01 | ¿Cuál es el cuestionario oficial que debemos usar? Adjuntar la versión vigente con los enunciados de E1–E22 y P1–P22. | Confirmado: PDF FORMATO ENCUESTA RED DE SALUD ABANCAY 2026.pdf, p. 2, contiene E1–E22 y P1–P22. 44 enunciados incorporados en la versión abancay-2026; ver PLAN_DESARROLLO.md. |
+| F01 | ¿Cuál es el cuestionario oficial que debemos usar? Adjuntar el formulario vigente con los enunciados de E1–E22 y P1–P22. | Confirmado: PDF FORMATO ENCUESTA RED DE SALUD ABANCAY 2026.pdf, p. 2, contiene E1–E22 y P1–P22. Los 44 enunciados se usan en un único formulario; ver PLAN_DESARROLLO.md. |
 | F02 | ¿Qué etiqueta corresponde a cada valor del 1 al 7? ¿Qué significa el código 99 y cuándo se permite seleccionarlo? | PDF p. 2: 1 menor calificación, 7 mayor; no define etiquetas intermedias. Usuario confirma No aplica para no aplicabilidad o no desea responder. Se elimina 99 del uso vigente y se conserva vacío como estado distinto. |
 | F03 | ¿Qué campos son obligatorios al enviar? Indicar si se requieren todos los pares E/P, si se aceptan respuestas en blanco y en qué casos. | Confirmado por el usuario: campos obligatorios; 44 respuestas con selección explícita de 1–7, No aplica o Sin respuesta. Vacío inicial no permite enviar. Datos generales obligatorios y Otros exige especificación. |
-| F04 | ¿Qué significa el código 4 del tipo de seguro, que aparece en algunas celdas del Excel? ¿Debe ofrecerse en la web? | PDF p. 1: 1 SIS, 2 Ninguno, 3 Otro. No figura código 4. El significado del 4 en el Excel sigue sin aclararse; no ofrecerlo. Catálogo adaptado por versión para preservar datos antiguos. |
+| F04 | ¿Qué significa el código 4 del tipo de seguro, que aparece en algunas celdas del Excel? ¿Debe ofrecerse en la web? | PDF p. 1: 1 SIS, 2 Ninguno, 3 Otro. No figura código 4. El significado del 4 en el Excel sigue sin aclararse; no ofrecerlo. |
 | F05 | ¿La especialidad será texto libre o se elegirá de un catálogo? Si es catálogo, indicar las opciones. | PDF p. 1: Consultorio / área donde fue atendido, campo libre. No presenta catálogo. Texto libre y rótulo incorporados al formulario. |
 | F06 | ¿El número de encuesta se digita o se genera automáticamente? ¿Dónde se reinicia el correlativo y qué debe pasar si se supera el 1000? | Usuario confirma número automático. Implementado correlativo por EESS/periodo sin límite de 1000 y reenvíos sin duplicados. El ámbito de reinicio es la convención técnica actual. |
 | F07 | ¿La captura será siempre a cargo del personal designado o también habrá un flujo para que el usuario o acompañante responda directamente? | Piloto acordado con un único digitador ficticio del EESS 00002630 CURAHUASI. El PDF identifica al encuestador; no determina si habrá autoservicio web. |

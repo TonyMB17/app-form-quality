@@ -5,7 +5,7 @@ Revisión: 6 de noviembre de 2026. Fuente: `FORMATO ENCUESTA RED DE SALUD ABANCA
 ## Hallazgos confirmados
 
 - Página 1: datos generales, presentación al encuestado y confidencialidad. Condición, sexo, estudios y tipo de usuario coinciden con el mapeo previo.
-- Página 1: seguro **1 SIS, 2 Ninguno, 3 Otro**. El Excel anterior usaba 2 SOAT y 3 Ninguno. No cambiar las etiquetas históricas sin distinguir versiones.
+- Página 1: seguro **1 SIS, 2 Ninguno, 3 Otro**. Los valores históricos 2 SOAT y 3 Ninguno se normalizan al catálogo vigente durante la migración.
 - Página 1: **Consultorio / área donde fue atendido** es texto libre; no se presenta un catálogo de especialidades.
 - Página 1: personal incluye Médico, Obstetra, Enfermera, Psicólogo, Odontólogo y **Otros con espacio para especificar**. El papel no muestra códigos numéricos para esta lista.
 - Página 2: están los 22 enunciados E y los 22 P. Deben transcribirse por separado: las percepciones no son una transformación mecánica del texto de expectativas. Por ejemplo, E9 trata de mecanismos para resolver problemas y P9 pregunta si el problema se resolvió inmediatamente.
@@ -17,10 +17,10 @@ Revisión: 6 de noviembre de 2026. Fuente: `FORMATO ENCUESTA RED DE SALUD ABANCA
 
 La captura, revisión, detalle y validación aceptan 1–7, `No aplica` o vacío. La migración convierte los 99 existentes a `No aplica`, conserva puntajes y nulos, y no cambia encuestas ni respuestas ajenas a esa conversión. La brecha solo se calcula con dos puntajes de 1–7. Un par con ambos campos contestados puede contener No aplica y no ser calculable.
 
-## Adaptación al PDF implementada
+## Formulario vigente
 
-1. Implementada una versión `abancay-2026` con los 44 enunciados verificados contra la página 2. Guardar textos, códigos E/P y dimensiones por versión; conservar las encuestas del instrumento provisional.
-2. Implementado el catálogo de seguro 1 SIS / 2 Ninguno / 3 Otro solo para la nueva versión. Mostrar las etiquetas anteriores en registros provisionales. No convertir el código 2 antiguo en Ninguno: representaba SOAT.
+1. Los 44 enunciados verificados contra la página 2 se usan en un único formulario; el proyecto no selecciona ni registra versiones del cuestionario.
+2. El catálogo único de seguro es 1 SIS / 2 Ninguno / 3 Otro. La migración adapta las etiquetas antiguas de seguro a este catálogo.
 3. Actualizado el rótulo «Especialidad» a «Consultorio / área donde fue atendido», manteniendo texto libre. Añadir «Especifique» al elegir Otros en personal. Definir antes de exigirlo si se permite omitir ese texto.
 4. Incorporadas las instrucciones de expectativas y percepciones y la escala con sus extremos, sin inventar descripciones intermedias. Mostrar cada código junto a su enunciado completo. Usar una columna de preguntas en celular y revisar legibilidad en escritorio.
 5. Confirmar obligatoriedad de los ocho datos generales y de los 44 campos de respuesta. La frase del PDF «sírvase contestar todas las preguntas» expresa una instrucción al encuestado, pero no resuelve el tratamiento técnico de omisiones. Hasta decidirlo, conservar la regla provisional de vacíos permitidos.
@@ -36,7 +36,7 @@ Correcciones de encuestas enviadas, periodicidad y cierre de captura, metas de m
 
 ### Estado de la entrega
 
-Los 44 enunciados están en config/abancay2026.php y se presentan en captura, revisión y detalle para la versión abancay-2026. La versión queda fijada en el inicio firmado del formulario. Registros provisionales conservan el catálogo de seguro anterior y no reciben enunciados retroactivamente. Otros: especifique se guarda solo al seleccionar Otros y es opcional. Pendientes: obligatoriedad definitiva y tablero.
+Los 44 enunciados están en `config/encuesta.php` y se presentan en captura, revisión, detalle y resultados. No se envía ni guarda metadato de versión. Otros: especifique se guarda solo al seleccionar Otros y es opcional. Pendientes: tablero y metas de muestra.
 
 ## Regla vigente: elección obligatoria
 

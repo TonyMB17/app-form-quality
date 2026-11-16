@@ -21,3 +21,12 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Entornos, credenciales y copias locales
+.env.*
+!.env.example
+!.env.production.example
+*.pem
+*.key
+/backups/
+/.railway/

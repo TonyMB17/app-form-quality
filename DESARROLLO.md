@@ -55,13 +55,13 @@ El catálogo de establecimientos dispone de tabla, modelo e importación desde X
 
 ## Registro de encuestas
 
-Ejecutar `php artisan migrate` y `php artisan db:seed --class=InstrumentoSeeder`. El seeder crea los 22 ítems y sus cinco dimensiones. En local/testing crea el periodo habilitado `Piloto técnico 2026`, con fechas de referencia del 1 de enero al 31 de diciembre de 2026. Repetirlo no reabre un periodo cerrado.
+Ejecutar `php artisan migrate` y `php artisan db:seed --class=EncuestaItemsSeeder`. El seeder crea los 22 ítems y sus cinco dimensiones. En local/testing crea el periodo habilitado `Piloto técnico 2026`, con fechas de referencia del 1 de enero al 31 de diciembre de 2026. Repetirlo no reabre un periodo cerrado.
 
 Desde `/mi-establecimiento`, elegir **Registrar encuesta**. Cada cuenta puede enviar una sola encuesta; al volver a intentar capturar, se abre el registro existente. Mientras esté publicada y antes de la fecha y hora límite configuradas por el administrador, se pueden modificar sus respuestas sin crear otro registro. El cierre administrativo o el vencimiento bloquean los cambios en el servidor. El formulario tiene Datos generales, Expectativas, Percepciones y Revisión. Conserva las respuestas al cambiar de paso y ante errores del servidor; no guarda un borrador al cerrar o recargar la página. La revisión permite volver a cada campo. El listado paginado está en `/encuestas`, con detalle y edición cuando siga habilitada.
 
 Metadatos automáticos: periodo, número, fecha y horas no se digitan. El servidor asigna el único periodo habilitado vigente al abrir el formulario, fecha y hora inicial de apertura, hora final de envío y correlativo por EESS/periodo al guardar. Si no hay un único periodo vigente, se bloquea la captura. El correlativo ya no tiene límite de 1000. Un identificador único evita duplicar reenvíos. Las encuestas anteriores se conservan. Los otros campos son opcionales. Edad entre 0 y 100; especialidad como texto; seguro solo códigos 1–3. Horas automáticas con precisión de minutos (America/Lima). Respuestas 1 a 7, texto No aplica o vacío. Un par completo tiene ambos valores presentes, incluso si contiene No aplica; solo los pares 1–7 permiten calcular una brecha. No se asignan respuestas por defecto.
 
-Cabecera y 22 respuestas se guardan en una transacción, con versión `servqual-provisional-v1`. La clave única es EESS + periodo + número. El autor y el EESS se resuelven desde la sesión; intentos de enviarlos en el formulario se rechazan. Listado y detalle se restringen al EESS del digitador. Cada usuario tiene una sola encuesta y solo puede editar sus respuestas mientras la encuesta esté publicada y dentro del plazo configurado.
+Cabecera y 22 respuestas se guardan en una transacción. Todas las encuestas usan el mismo formulario; no se seleccionan ni administran versiones. La clave única es EESS + periodo + número. El autor y el EESS se resuelven desde la sesión; intentos de enviarlos en el formulario se rechazan. Listado y detalle se restringen al EESS del digitador. Cada usuario tiene una sola encuesta y solo puede editar sus respuestas mientras la encuesta esté publicada y dentro del plazo configurado.
 
 Las pruebas automáticas cubren el límite de una encuesta por usuario, edición del mismo registro, bloqueo al cerrar o vencer el plazo, duplicados, No aplica y valores vacíos, puntajes inválidos, periodo cerrado, manipulación de EESS, autenticación y aislamiento del listado/detalle. Las pruebas usan SQLite en memoria y no agregan encuestas al MySQL local. Se comprobó además en Edge el recorrido de los cuatro pasos, la edición desde revisión, conservación de respuestas y ancho de 390 px.
 
@@ -101,9 +101,9 @@ Las pruebas de importación utilizan el XLS original como referencia de lectura 
 
 La migración 000005 convierte los 99 existentes a texto `No aplica`. Las columnas de respuestas pasan a texto anulable y el servidor solo admite 1–7 o `No aplica`; los vacíos se guardan como NULL. No aplica incluye no desea responder por instrucción del usuario. La API rechaza 99 en nuevas capturas. El plan de adaptación de los enunciados y catálogos al PDF está en PLAN_DESARROLLO.md.
 
-## Instrumento Abancay 2026 implementado
+## Formulario de encuesta
 
-Nuevas capturas usan abancay-2026, con 44 enunciados transcritos del PDF p. 2 en config/abancay2026.php. La versión viaja dentro del inicio cifrado y no puede alterarse desde el cliente. Seguro: 1 SIS, 2 Ninguno, 3 Otro. La consulta de servqual-provisional-v1 conserva 1 SIS, 2 SOAT, 3 Ninguno. No se reetiquetan registros anteriores. Consultorio / área mantiene texto libre. personal_otro es opcional, máximo 255 caracteres, y el servidor lo anula si personal no es 6. Las reglas restantes de vacíos permitidos y metadatos automáticos continúan vigentes.
+El formulario vigente contiene los 44 enunciados de `config/encuesta.php`. Seguro: 1 SIS, 2 Ninguno, 3 Otro. La migración que retiró el seguimiento de versiones normaliza las etiquetas antiguas de seguro a este catálogo. Consultorio / área mantiene texto libre. `personal_otro` es opcional, máximo 255 caracteres, y el servidor lo anula si personal no es 6.
 
 ## Validación funcional del 6 de noviembre de 2026
 
@@ -115,7 +115,7 @@ Encuesta 1: No aplica en expectativa, un par totalmente vacío y 20 brechas +3. 
 
 Ruta `/tablero`, disponible únicamente para administradores con sesión. El digitador solo puede listar y abrir el detalle de su propia encuesta; no tiene acceso a resultados ni a otras encuestas de su establecimiento. El administrador puede consultar listados, detalles y resultados de los EESS autorizados; requiere asignaciones explícitas en `administrador_establecimiento` y, sin asignaciones, recibe 403. La captura y edición de respuestas siguen limitadas al digitador propietario, y la configuración de publicación global requiere autorización para todos los EESS.
 
-Filtros por periodo, microred, establecimiento y versión. La lista de EESS depende de la microred y del ámbito autorizado. Totales, listado paginado y resultados usan la misma consulta filtrada. La actualización cada 30 segundos conserva filtros y página, pausa en pestañas ocultas y puede desactivarse. También hay actualización manual y hora de la última respuesta del servidor.
+Filtros por microred, establecimiento y digitador. La lista de EESS y digitadores depende del ámbito autorizado y de la selección territorial. Totales, listado paginado y resultados usan la misma consulta filtrada. La actualización cada 30 segundos conserva filtros y página, pausa en pestañas ocultas y puede desactivarse. También hay actualización manual y hora de la última respuesta del servidor.
 
 Se muestran encuestas enviadas, EESS con encuestas, pares válidos/excluidos y satisfacción por pregunta, dimensión y total. Solo pares numéricos 1–7 entran al denominador. P−E igual o mayor a cero cuenta como satisfecho; negativo como insatisfecho. No aplica y vacío se excluyen. Dimensiones y total suman conteos de pares, no promedian porcentajes. Sin denominador se muestra Sin pares válidos. No aplica e incompletos son conteos que pueden solaparse; el total de excluidos no los suma dos veces. Se advierte que los datos son ficticios y la metodología es provisional. Metas de muestra y aprobación metodológica siguen pendientes.
 
@@ -162,6 +162,20 @@ php artisan establecimientos:importar "Listado de Establecimientos.xls"
 php artisan db:seed
 ```
 
-La importación y el seeder cargan el catálogo RENIPRESS y los ítems del instrumento; el seeder también crea la cuenta digitadora ficticia solo en `local` o `testing`. No se exportan encuestas ni credenciales de las cuentas existentes. Si se agrega una migración, se debe conservar y ejecutar con `php artisan migrate` en cada instalación.
+La importación y el seeder cargan el catálogo RENIPRESS y los ítems del cuestionario; el seeder también crea la cuenta digitadora ficticia solo en `local` o `testing`. No se exportan encuestas ni credenciales de las cuentas existentes. Si se agrega una migración, se debe conservar y ejecutar con `php artisan migrate` en cada instalación.
 
 Resultados: pestañas General, Microredes y Establecimientos; comparación por dimensiones o 22 preguntas, búsqueda, semáforo y conteos por celda. Agregados limitados por filtros y autorización; incluye unidades sin encuestas. Pruebas del tablero: 97 aserciones; navegación de pestañas y móvil verificados.
+
+## Cambio de enfoque — 09/11/2026
+El digitador registra múltiples encuestas anónimas de pacientes de su establecimiento. Se conserva el cuestionario completo y su estructura sin cambios. Los periodos se administran en Publicación, con nombre, inicio/cierre en Lima y estado borrador/publicado/cerrado; duración sugerida de 14 días. No se admiten periodos publicados solapados.
+Publicación lista, muestra y permite editar periodos, ver su detalle, abrir/cerrar su estado y borrar únicamente los que no tengan encuestas asociadas.
+Envío y edición verifican el periodo de la encuesta en el servidor. Cada digitador modifica únicamente sus registros durante la ventana abierta; los cambios guardan antes/después, responsable y fecha en encuesta_cambios. Los reintentos conservan su protección por envio_id. Los registros anteriores se conservan y los resultados siguen filtrándose por periodo.
+El periodo piloto anterior conserva sus fechas: el administrador debe ajustar su ventana o cerrarlo antes de publicar una campaña que se solape. Los pacientes no tienen cuenta ni identificador personal; los porcentajes corresponden a encuestas, no a pacientes únicos.
+Validación: suite existente adaptada, pruebas de múltiples envíos/edición/historial, permisos, cierre y solapamientos; prueba adicional de límites exactos de inicio/cierre y borrador. Build TypeScript/Vite correcto.
+
+## Foto obligatoria de respaldo — 09/11/2026
+Los envíos nuevos requieren una imagen JPEG/PNG/WebP válida de hasta 1536 KiB. En revisión se puede tomar foto (capture environment, según navegador), seleccionar, ver, reemplazar o quitar. El navegador reduce a un máximo de 2400 px y comprime a JPEG; rechaza originales de más de 25 MiB. Las preguntas y opciones no se modifican.
+Se almacena en el disco privado local con nombre generado; la ruta autenticada verifica ámbito administrativo o propiedad del digitador y responde sin caché. Un reintento no duplica archivos; un error transaccional elimina la foto recién guardada. Registros anteriores siguen sin foto. La evidencia se consulta en el detalle para revisión manual; no supone aprobación automática. No se incluye la foto en localStorage: debe adjuntarse otra vez al recargar/restaurar borrador.
+Validación: build correcto, 28 pruebas / 538 aserciones, prueba en navegador de selección, compresión y vista previa móvil. La apertura de cámara física queda por comprobar en un teléfono real.
+
+Estilos de foto: tarjeta de captura con estados pendiente/adjunta, botones táctiles con iconos, previsualización y aviso de privacidad. Se incorpora lucide-react y se migran los iconos compartidos y de información. Build y selección/compresión/vista previa/eliminación verificados en navegador con ancho móvil.
