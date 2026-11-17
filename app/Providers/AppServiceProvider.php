@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Illuminate\Cache\RateLimiter;
 use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
@@ -13,7 +14,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // Railway MySQL runs with autocommit=0 for non-root users, which causes
+        // PDOException "There is already an active transaction" whenever Laravel
+        // tries to call beginTransaction() (e.g. DatabaseStore::increment() for throttle).
         //
+        // Fix: switch cache and session to file driver in production so that no
+        // database transactions are needed for sessions or rate-limiting.
+        // This runs in register() — before any store is resolved — so it always wins.
+        if ($this->app->environment('production')) {
+            config(['cache.default' => 'file']);
+            config(['session.driver' => 'file']);
+        }
     }
 
     /**
@@ -26,25 +37,22 @@ class AppServiceProvider extends ServiceProvider
             \Illuminate\Http\Middleware\TrustProxies::at('*');
         }
 
-        // Fix 1: Force autocommit=1 on each new MySQL connection via raw PDO exec.
-        // Railway's MySQL sets autocommit=0 via server init_connect for non-root users,
-        // which causes PDOException "There is already an active transaction" when any
-        // Laravel code (e.g. Cache rate-limiter) tries to start a DB transaction.
+        // Belt-and-suspenders: also force autocommit=1 at the PDO level on every
+        // new connection so that explicit DB::transaction() calls still work correctly.
         DB::afterConnecting(function (Connection $connection) {
             if ($connection->getDriverName() === 'mysql') {
                 try {
                     $connection->getPdo()->exec('SET autocommit = 1');
                 } catch (\Throwable $e) {
-                    // best-effort
+                    // best-effort — do not block the request if this fails
                 }
             }
         });
 
-        // Fix 2 (safety net): If the cache store is set to 'database', switch it to
-        // 'file' at runtime. This avoids DatabaseStore::increment() starting a DB
-        // transaction for the rate-limiter, which triggers the autocommit=0 conflict.
-        if (config('cache.default') === 'database') {
-            config(['cache.default' => 'file']);
-        }
+        // Extra safety: rebind RateLimiter to always use the file cache store
+        // so that throttle middleware never touches DatabaseStore::increment().
+        $this->app->singleton(RateLimiter::class, function ($app) {
+            return new RateLimiter($app->make('cache')->store('file'));
+        });
     }
 }
