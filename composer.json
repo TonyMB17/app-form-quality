@@ -9,6 +9,11 @@
   ],
   "license": "MIT",
   "require": {
+    "ext-gd": "*",
+    "ext-mbstring": "*",
+    "ext-pdo_mysql": "*",
+    "ext-xml": "*",
+    "ext-zip": "*",
     "php": "^8.2",
     "inertiajs/inertia-laravel": "^2.0",
     "laravel/framework": "^12.0",

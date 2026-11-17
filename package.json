@@ -2,6 +2,10 @@
   "name": "app-form-quality",
   "private": true,
   "type": "module",
+  "packageManager": "npm@10.9.0",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "build": "tsc --noEmit && vite build",
     "dev": "vite",
