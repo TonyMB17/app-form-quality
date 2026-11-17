@@ -30,3 +30,11 @@ yarn-error.log
 *.key
 /backups/
 /.railway/
+
+# Bases de datos y exportaciones con datos: nunca deben publicarse en GitHub
+/database/*.sqlite
+/database/*.sqlite-*
+*.sql
+*.sql.gz
+*.dump
+!/database/schema/*.sql

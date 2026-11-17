@@ -43,6 +43,16 @@ Las pruebas usan SQLite en memoria; no modifican MySQL local. GitHub Actions eje
 
 Guía: [Publicación en Railway](docs/DEPLOY_RAILWAY.md). No se versionan `.env`, fotos, logs, dependencias ni archivos compilados.
 
+## Base de datos en Railway
+GitHub solo recibe el código: no publica la base MySQL local, las fotografías ni los usuarios existentes. Para una instalación nueva:
+
+1. Añade un servicio MySQL en Railway y conecta sus variables al servicio web.
+2. El primer despliegue ejecutará `php artisan migrate --force` y creará todas las tablas en la base vacía.
+3. Importa el catálogo de establecimientos, carga los 22 ítems y crea el primer administrador siguiendo la guía de Railway.
+4. Inicia sesión como administrador y crea los digitadores y el periodo desde la aplicación.
+
+No subas respaldos `.sql` con datos a GitHub; el único SQL versionado es el esquema de Laravel sin cuentas ni encuestas. Si los datos locales ya son datos reales que deben conservarse, migra una copia completa y verificada directamente a MySQL de Railway; no copies únicamente la tabla `users`, porque sus establecimientos, permisos y encuestas tienen relaciones asociadas. La guía de despliegue explica ambas alternativas.
+
 ## Documentación
 - [Plan de interfaz](PLAN_MEJORAS_UI.md)
 - [Desarrollo](DESARROLLO.md)

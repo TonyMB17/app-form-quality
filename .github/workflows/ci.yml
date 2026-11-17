@@ -20,6 +20,7 @@ jobs:
         with:
           node-version: '22'
           cache: npm
+      - run: composer validate --strict --no-check-publish
       - run: composer install --no-interaction --prefer-dist
       - run: cp .env.example .env && php artisan key:generate
       - run: npm ci

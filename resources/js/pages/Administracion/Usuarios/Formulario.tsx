@@ -1,6 +1,6 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
-import { AppHeader } from '../../../components/Interface';
+import { AdminPageHeader, AppHeader } from '../../../components/Interface';
 
 type Eess = { id: number; nombre: string; codigo_renipress: string };
 type Usuario = { id: number; dni: string | null; name: string; establecimiento_id: number | null; role: 'administrador' | 'digitador' };
@@ -21,11 +21,10 @@ export default function Formulario({ usuario, establecimientos }: { usuario: Usu
         else form.post('/administracion/usuarios');
     }
 
-    return <><AppHeader admin active="usuarios" /><Head title={administrador ? 'Editar administrador' : editando ? 'Editar usuario' : 'Crear usuario'} /><main className="workspace user-management">
+    const title = administrador ? 'Editar administrador' : editando ? 'Editar usuario' : 'Crear usuario';
+    return <><AppHeader admin active="usuarios" /><Head title={title} /><main className="workspace admin-view user-management user-form-page">
         <Link className="detail-back-button" href="/administracion/usuarios">← Volver a usuarios</Link>
-        <p className="eyebrow">ADMINISTRACIÓN · {administrador ? 'CUENTA ADMINISTRATIVA' : 'CUENTAS DIGITADORAS'}</p>
-        <h1>{administrador ? 'Editar administrador' : editando ? 'Editar usuario' : 'Crear usuario'}</h1>
-        <p className="user-form-intro">{administrador ? 'Actualiza los datos de acceso de esta cuenta administrativa. Para cambiar su contraseña, confirma la contraseña actual del administrador que realiza el cambio.' : 'El DNI será el nombre de usuario. Solo podrás asignar establecimientos dentro de tu ámbito administrativo.'}</p>
+        <AdminPageHeader context={administrador ? 'Cuenta administrativa' : 'Cuenta digitadora'} title={title} description={administrador ? 'Actualiza los datos de acceso. Para cambiar la contraseña, confirma la credencial del administrador que realiza el cambio.' : 'El DNI será el nombre de usuario. Solo puedes asignar establecimientos dentro de tu ámbito administrativo.'} />
         <form className="auth-card user-form" onSubmit={guardar}>
             {administrador ? <>
                 <div><label htmlFor="admin-name">Nombre completo</label><input id="admin-name" value={form.data.name} onChange={event => form.setData('name', event.target.value)} maxLength={255} autoComplete="name" required />{form.errors.name && <p className="error">{form.errors.name}</p>}</div>

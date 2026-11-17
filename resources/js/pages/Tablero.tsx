@@ -2,7 +2,7 @@ import QuestionCode from '../components/QuestionCode';
 import RespondentStats, { type RespondentData } from '../components/RespondentStats';
 import ResultsComparison, { type ComparisonRow } from '../components/ResultsComparison';
 import ResultsOverview, { StatusBadge } from '../components/ResultsOverview';
-import { AppHeader } from '../components/Interface';
+import { AdminPageHeader, AppHeader, Pagination } from '../components/Interface';
 import { Head, Link, router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 type Totales = { validos: number; satisfechos: number };
@@ -45,9 +45,9 @@ export default function Tablero(p: Props) {
         if (key === 'microred' || key === 'eess') next.digitador = '';
         router.get('/tablero', Object.fromEntries(Object.entries(next).filter(([, v]) => v !== '' && v != null)), { preserveState: true, preserveScroll: true });
     }
-    return <><AppHeader active="resultados" admin={!p.es_digitador} /><main className="workspace dashboard"><Head title="Tablero de encuestas" />
+    return <><AppHeader active="resultados" admin={!p.es_digitador} /><main className={`workspace dashboard ${!p.es_digitador ? 'admin-view' : ''}`}><Head title="Tablero de encuestas" />
 
-        <div className="dashboard-intro"><div><p className="eyebrow">SEGUIMIENTO DE LA ATENCIÓN</p><h1>Resultados</h1></div><p>Encuestas del ámbito autorizado.</p><details className="dashboard-methodology"><summary>Datos de prueba y metodología</summary><p>Incluye encuestas ficticias. Criterio provisional: satisfecho si P−E ≥ 0; No aplica, Sin respuesta y vacíos se excluyen. Los porcentajes se calculan sobre pares válidos.</p></details></div>
+        <AdminPageHeader context="Seguimiento de la atención" title="Resultados" description="Encuestas del ámbito autorizado." support={<details className="dashboard-methodology"><summary>Datos de prueba y metodología</summary><p>Incluye encuestas ficticias. Criterio provisional: satisfecho si P−E ≥ 0; No aplica, Sin respuesta y vacíos se excluyen. Los porcentajes se calculan sobre pares válidos.</p></details>} />
         <section className="auth-card filters" aria-label="Filtros del tablero">
             <div><label htmlFor="microred">Microred</label><select id="microred" value={p.filtros.microred ?? ''} onChange={e => filtrar('microred', e.target.value)}><option value="">Todas las autorizadas</option>{[...new Set(p.catalogo.map(o => o.microred))].map(m => <option key={m}>{m}</option>)}</select></div>
             <div><label htmlFor="eess">Establecimiento</label><select id="eess" value={p.filtros.eess ?? ''} onChange={e => filtrar('eess', e.target.value)}><option value="">Todos los autorizados</option>{p.catalogo.filter(o => !p.filtros.microred || o.microred === p.filtros.microred).map(o => <option value={o.id} key={o.id}>{o.codigo_renipress} · {o.nombre}</option>)}</select></div>
@@ -61,7 +61,7 @@ export default function Tablero(p: Props) {
         {tab === 'usuarios' ? <RespondentStats data={p.datos_generales} total={p.resumen.encuestas} /> : tab !== 'general' ? <ResultsComparison key={tab} rows={p.comparacion} mode={tab} questions={p.items} /> : <>
         <ResultsOverview resumen={p.resumen} dimensiones={p.dimensiones} />
         <section><h2>Resultados por pregunta</h2><p>Los conteos de No aplica, Sin respuesta e incompletos pueden coincidir en un mismo par; no deben sumarse entre sí. Pulsa una pregunta para consultar sus enunciados.</p><div className="table-wrap"><table><thead><tr><th>Pregunta</th><th>Válidos</th><th>Satisfechos</th><th>Insatisfechos</th><th>Satisfacción</th><th>Semáforo de insatisfacción</th><th>No aplica</th><th>Sin respuesta</th><th>Incompletos</th></tr></thead><tbody>{p.items.map(i => <tr key={i.numero}><th><QuestionCode question={i} /></th><td>{i.validos}</td><td>{i.satisfechos}</td><td>{i.validos - i.satisfechos}</td><td>{porcentaje(i)}</td><td><StatusBadge totals={i} /></td><td>{i.no_aplica}</td><td>{i.sin_respuesta}</td><td>{i.incompletos}</td></tr>)}</tbody></table></div></section>
-        <section><h2>Encuestas del resultado ({p.encuestas.total})</h2><div className="table-wrap"><table><thead><tr><th>Número</th><th>EESS</th><th>Fecha</th><th>Detalle</th></tr></thead><tbody>{p.encuestas.data.map(e => <tr key={e.id}><td>{e.numero}</td><td>{e.establecimiento}</td><td>{e.fecha.split('-').reverse().join('/')}</td><td><Link href={`/encuestas/${e.id}`}>Ver encuesta {e.numero}</Link></td></tr>)}</tbody></table></div><nav className="actions" aria-label="Paginación">{p.encuestas.prev_page_url && <Link href={p.encuestas.prev_page_url}>Anterior</Link>}<span>Página {p.encuestas.current_page} de {p.encuestas.last_page}</span>{p.encuestas.next_page_url && <Link href={p.encuestas.next_page_url}>Siguiente</Link>}</nav></section>
+        <section><h2>Encuestas del resultado ({p.encuestas.total})</h2><div className="table-wrap"><table><thead><tr><th>Número</th><th>EESS</th><th>Fecha</th><th>Detalle</th></tr></thead><tbody>{p.encuestas.data.map(e => <tr key={e.id}><td>{e.numero}</td><td>{e.establecimiento}</td><td>{e.fecha.split('-').reverse().join('/')}</td><td><Link href={`/encuestas/${e.id}`}>Ver encuesta {e.numero}</Link></td></tr>)}</tbody></table></div><Pagination currentPage={p.encuestas.current_page} lastPage={p.encuestas.last_page} previous={p.encuestas.prev_page_url} next={p.encuestas.next_page_url} /></section>
         </>}
         </div>
     </main></>;

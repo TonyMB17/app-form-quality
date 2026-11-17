@@ -40,7 +40,8 @@ class TableroTest extends TestCase
         $this->actingAs(User::where('role', 'administrador')->firstOrFail());
         $this->get('/tablero')->assertInertia(fn (AssertableInertia $p) => $p->component('Tablero', false)
             ->where('resumen.encuestas', 2)->where('resumen.establecimientos', 1)->where('resumen.validos', 6)->where('resumen.satisfechos', 4)->where('resumen.excluidos', 38)
-            ->has('datos_generales.cuentas', 1)->where('datos_generales.cuentas.0.encuestas', 2)->where('datos_generales.microredes.0.total', 2)->where('datos_generales.distribuciones.sexo.0.total', 2)->has('comparacion', 1)->where('comparacion.0.encuestas', 2)->has('comparacion.0.items', 22)->where('comparacion.0.items.0.validos', 2)->where('comparacion.0.items.0.satisfechos', 2)->where('comparacion.0.items.2.satisfechos', 0)->where('comparacion.0.items.3.validos', 0)
+            ->has('datos_generales.cuentas', 1)->where('datos_generales.cuentas.0.encuestas', 2)->where('datos_generales.cuentas.0.realizadas', 2)->where('datos_generales.cuentas.0.meta', 5)
+            ->where('datos_generales.periodo_meta.id', $this->periodo)->where('datos_generales.microredes.0.total', 2)->where('datos_generales.distribuciones.sexo.0.total', 2)->has('comparacion', 1)->where('comparacion.0.encuestas', 2)->has('comparacion.0.items', 22)->where('comparacion.0.items.0.validos', 2)->where('comparacion.0.items.0.satisfechos', 2)->where('comparacion.0.items.2.satisfechos', 0)->where('comparacion.0.items.3.validos', 0)
             ->where('encuestas.total', 2)->has('catalogo', 1)->where('items.0.satisfechos', 2)->where('items.1.satisfechos', 2)->where('items.2.satisfechos', 0)
             ->where('items.3.no_aplica', 2)->where('items.4.incompletos', 2)->where('dimensiones.0.validos', 6)->where('dimensiones.1.validos', 0));
         $this->get('/tablero')->assertInertia(fn (AssertableInertia $p) => $p->missing('filtros.version')->where('resumen.encuestas', 2));
@@ -71,7 +72,9 @@ class TableroTest extends TestCase
             ->has('digitadores', 2)
             ->has('datos_generales.cuentas', 1)
             ->where('datos_generales.cuentas.0.id', $otherDigitador->id)
-            ->where('datos_generales.cuentas.0.encuestas', 1));
+            ->where('datos_generales.cuentas.0.encuestas', 1)
+            ->where('datos_generales.cuentas.0.realizadas', 1)
+            ->where('datos_generales.cuentas.0.meta', 5));
 
         $outsideEess = DB::table('establecimientos')->where('id', '!=', $eess)->value('id');
         $outsideDigitador = User::create(['name' => 'Digitador fuera del ámbito', 'dni' => '99000021', 'password' => 'test-password']);

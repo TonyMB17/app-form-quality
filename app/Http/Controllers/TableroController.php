@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use App\Support\AmbitoEncuestas;
 use App\Support\EncuestaItems;
+use App\Support\SurveyAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -81,13 +82,20 @@ class TableroController extends Controller
             $demographics[$field] = collect($buckets)->map(fn ($n, $label) => ['nombre' => $label, 'total' => $n])->values();
         }
         $byUser = (clone $q)->select('e.user_id')->selectRaw('COUNT(*) as total')->groupBy('e.user_id')->pluck('total', 'user_id');
+        $periodosMeta = DB::table('periodos')->orderByDesc('abre_at')->orderByDesc('id')->get();
+        $periodoMeta = $periodosMeta->first(fn ($periodo) => SurveyAccess::open($periodo)) ?? $periodosMeta->first();
+        $avanceMeta = DB::table('encuestas')->whereIn('establecimiento_id', $comparison->pluck('id'))
+            ->where('periodo_id', $periodoMeta->id ?? 0)
+            ->select('user_id')->selectRaw('COUNT(*) as total')->groupBy('user_id')->pluck('total', 'user_id');
         $accounts = DB::table('users as u')->join('establecimientos as s', 's.id', '=', 'u.establecimiento_id')
             ->where('u.role', 'digitador')->whereIn('s.id', $comparison->pluck('id'))
-            ->orderBy('u.name')->get(['u.id', 'u.name', 's.nombre as establecimiento', 's.microred'])
+            ->orderBy('u.name')->get(['u.id', 'u.name', 's.nombre as establecimiento', 's.microred', 's.meta_encuestas'])
             ->when(!empty($filters['digitador']), fn ($users) => $users->where('id', $filters['digitador']))
-            ->map(fn ($u) => ['id' => $u->id, 'nombre' => $u->name, 'establecimiento' => $u->establecimiento, 'microred' => $u->microred, 'encuestas' => (int) ($byUser[$u->id] ?? 0)]);
+            ->map(fn ($u) => ['id' => $u->id, 'nombre' => $u->name, 'establecimiento' => $u->establecimiento, 'microred' => $u->microred,
+                'encuestas' => (int) ($byUser[$u->id] ?? 0), 'realizadas' => (int) ($avanceMeta[$u->id] ?? 0), 'meta' => (int) $u->meta_encuestas]);
         return Inertia::render('Tablero', [
-            'datos_generales' => ['distribuciones' => $demographics, 'cuentas' => $accounts, 'microredes' => (clone $q)->select('s.microred as nombre')->selectRaw('COUNT(*) as total')->groupBy('s.microred')->get()],
+            'datos_generales' => ['distribuciones' => $demographics, 'cuentas' => $accounts, 'microredes' => (clone $q)->select('s.microred as nombre')->selectRaw('COUNT(*) as total')->groupBy('s.microred')->get(),
+                'periodo_meta' => $periodoMeta ? ['id' => $periodoMeta->id, 'nombre' => $periodoMeta->nombre] : null],
             'filtros' => $filters,
             'digitadores' => $digitadores->map(fn ($u) => ['id' => $u->id, 'nombre' => $u->name, 'establecimiento' => $u->establecimiento]),
             'comparacion' => $comparison, 'catalogo' => $catalogo, 'items' => $items, 'dimensiones' => $dimensions,

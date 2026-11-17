@@ -2,7 +2,7 @@ import { formatDate } from '../components/formatDate';
 import { Head, router, useForm } from '@inertiajs/react';
 import { CalendarDays, Check, Clock3, Eye, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { AppHeader } from '../components/Interface';
+import { AdminPageHeader, AdminSectionHeading, AppHeader } from '../components/Interface';
 
 type Period = {
     id: number;
@@ -78,11 +78,8 @@ export default function SurveySettings({ periodos }: { periodos: Period[] }) {
     }
 
     return <><AppHeader admin active="publicacion" /><Head title="Publicación de periodos" />
-        <main className="workspace publication-page">
-            <header className="publication-heading">
-                <div><p className="eyebrow">ADMINISTRACIÓN · RECOLECCIÓN</p><h1>Publicación</h1><p>Programa, revisa y administra los periodos de encuesta.</p></div>
-                <button className="primary publication-new" type="button" onClick={() => select()}><Plus size={18} aria-hidden="true" />Nuevo periodo</button>
-            </header>
+        <main className="workspace admin-view publication-page">
+            <AdminPageHeader context="Calendario de recolección" title="Publicación" description="Programa, revisa y administra los periodos de encuesta." actions={<button className="primary publication-new" type="button" onClick={() => select()}><Plus size={18} aria-hidden="true" />Nuevo periodo</button>} />
 
             <section className="publication-summary" aria-label="Resumen de periodos">
                 <article><span>Periodos registrados</span><strong>{periodos.length}</strong><small>En todo el sistema</small></article>
@@ -97,7 +94,7 @@ export default function SurveySettings({ periodos }: { periodos: Period[] }) {
 
             <div className="publication-layout">
                 <section className="publication-period-list" aria-labelledby="period-list-title">
-                    <div className="publication-section-heading"><div><h2 id="period-list-title">Periodos registrados</h2><p>Consulta sus fechas y cambia su estado cuando sea necesario.</p></div><span>{periodos.length}</span></div>
+                    <AdminSectionHeading id="period-list-title" title="Periodos registrados" description="Consulta sus fechas y cambia su estado cuando sea necesario." aside={<span className="admin-count-badge">{periodos.length}</span>} />
                     {periodos.length === 0
                         ? <div className="publication-empty"><CalendarDays size={30} aria-hidden="true" /><h3>Aún no hay periodos</h3><p>Crea uno para programar la recolección de encuestas.</p><button type="button" className="quiet-button" onClick={() => select()}>Crear periodo</button></div>
                         : <div className="publication-periods">{periodos.map(periodo => <article className="publication-period" key={periodo.id}>
@@ -127,7 +124,7 @@ export default function SurveySettings({ periodos }: { periodos: Period[] }) {
             </div>
 
             <section className="auth-card publication-form" aria-labelledby="period-form-title">
-                <div className="publication-form-heading"><div><p className="eyebrow">{form.data.id ? 'CONFIGURACIÓN' : 'NUEVO PERIODO'}</p><h2 id="period-form-title">{form.data.id ? 'Editar periodo' : 'Crear periodo'}</h2></div>{form.data.id && <button className="quiet-button" type="button" onClick={() => select()}>Cancelar edición</button>}</div>
+                <div className="publication-form-heading"><div><p className="admin-page-context">{form.data.id ? 'Configuración' : 'Nuevo periodo'}</p><h2 id="period-form-title">{form.data.id ? 'Editar periodo' : 'Crear periodo'}</h2></div>{form.data.id && <button className="quiet-button" type="button" onClick={() => select()}>Cancelar edición</button>}</div>
                 <form onSubmit={event => { event.preventDefault(); form.put('/administracion/encuesta', { preserveScroll: true, onSuccess: () => setSaved(true) }); }}>
                     <div className="publication-fields">
                         <div><label htmlFor="period-name">Nombre del periodo</label><input id="period-name" required maxLength={150} value={form.data.nombre} onChange={event => form.setData('nombre', event.target.value)} placeholder="Ej. Campaña de noviembre" /></div>
@@ -148,7 +145,7 @@ export default function SurveySettings({ periodos }: { periodos: Period[] }) {
             {selected && <div className="publication-modal-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) setSelected(null); }}>
                 <section className="publication-modal" role="dialog" aria-modal="true" aria-labelledby="period-view-title" tabIndex={-1} onKeyDown={event => { if (event.key === 'Escape') setSelected(null); }}>
                     <button className="publication-modal-close quiet-button" type="button" autoFocus onClick={() => setSelected(null)} aria-label="Cerrar detalle">×</button>
-                    <p className="eyebrow">DETALLE DEL PERIODO</p><h2 id="period-view-title">{selected.nombre}</h2>
+                    <p className="admin-page-context">Detalle del periodo</p><h2 id="period-view-title">{selected.nombre}</h2>
                     <span className={`publication-status ${claseEstado(selected)}`}><span />{nombreEstado(selected)}</span>
                     <dl className="publication-details"><div><dt>Inicio · hora de Lima</dt><dd>{mostrarFecha(selected.abre_at)}</dd></div><div><dt>Cierre · hora de Lima</dt><dd>{mostrarFecha(selected.cierra_at)}</dd></div><div><dt>Encuestas registradas</dt><dd>{selected.encuestas}</dd></div></dl>
                     <div className="publication-period-actions"><button type="button" className="quiet-button" onClick={() => select(selected)}><Pencil size={16} aria-hidden="true" />Editar</button><button type="button" className="quiet-button publication-delete" onClick={() => remove(selected)} disabled={selected.encuestas > 0}><Trash2 size={16} aria-hidden="true" />Eliminar</button></div>
