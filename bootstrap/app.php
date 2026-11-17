@@ -11,6 +11,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Trust Railway's reverse proxy so Laravel correctly detects HTTPS.
+        // Without this, SESSION_SECURE_COOKIE=true blocks the session cookie.
+        $middleware->trustProxies(at: '*');
         $middleware->web(append: [\App\Http\Middleware\HandleInertiaRequests::class]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
