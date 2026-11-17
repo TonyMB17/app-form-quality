@@ -57,12 +57,12 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? array_merge(
+            'options' => extension_loaded('pdo_mysql') ? array_replace(
                 env('MYSQL_ATTR_SSL_CA') ? [PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA')] : [],
                 [
                     PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
                     PDO::ATTR_AUTOCOMMIT => 1,
-                    // Force SET autocommit=1 on the MySQL server side — Railway sets autocommit=0 by default
+                    // Preserve numeric PDO option keys; array_merge would renumber them.
                     PDO::MYSQL_ATTR_INIT_COMMAND => 'SET autocommit=1',
                 ]
             ) : [],
@@ -83,12 +83,12 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? array_merge(
+            'options' => extension_loaded('pdo_mysql') ? array_replace(
                 env('MYSQL_ATTR_SSL_CA') ? [PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA')] : [],
                 [
                     PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
                     PDO::ATTR_AUTOCOMMIT => 1,
-                    // Force SET autocommit=1 on the MySQL server side — Railway sets autocommit=0 by default
+                    // Preserve numeric PDO option keys; array_merge would renumber them.
                     PDO::MYSQL_ATTR_INIT_COMMAND => 'SET autocommit=1',
                 ]
             ) : [],
