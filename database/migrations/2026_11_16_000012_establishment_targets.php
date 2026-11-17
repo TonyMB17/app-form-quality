@@ -8,7 +8,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('establecimientos', fn (Blueprint $table) => $table->unsignedInteger('meta_encuestas')->default(5));
+        if (! Schema::hasColumn('establecimientos', 'meta_encuestas')) {
+            Schema::table('establecimientos', fn (Blueprint $table) => $table->unsignedInteger('meta_encuestas')->default(5));
+        }
     }
 
     public function down(): void
