@@ -3,8 +3,6 @@
 namespace App\Providers;
 
 use Illuminate\Cache\RateLimiter;
-use Illuminate\Database\Connection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -18,9 +16,10 @@ class AppServiceProvider extends ServiceProvider
         // PDOException "There is already an active transaction" whenever Laravel
         // tries to call beginTransaction() (e.g. DatabaseStore::increment() for throttle).
         //
-        // Fix: switch cache and session to file driver in production so that no
-        // database transactions are needed for sessions or rate-limiting.
-        // This runs in register() — before any store is resolved — so it always wins.
+        // Fix: switch cache and session to file driver at runtime in production
+        // so no DB transactions are needed for sessions or rate-limiting.
+        // Runs in register() — before any store is resolved — so it always wins
+        // over whatever CACHE_STORE / SESSION_DRIVER env variables are set.
         if ($this->app->environment('production')) {
             config(['cache.default' => 'file']);
             config(['session.driver' => 'file']);
@@ -37,20 +36,8 @@ class AppServiceProvider extends ServiceProvider
             \Illuminate\Http\Middleware\TrustProxies::at('*');
         }
 
-        // Belt-and-suspenders: also force autocommit=1 at the PDO level on every
-        // new connection so that explicit DB::transaction() calls still work correctly.
-        DB::afterConnecting(function (Connection $connection) {
-            if ($connection->getDriverName() === 'mysql') {
-                try {
-                    $connection->getPdo()->exec('SET autocommit = 1');
-                } catch (\Throwable $e) {
-                    // best-effort — do not block the request if this fails
-                }
-            }
-        });
-
         // Extra safety: rebind RateLimiter to always use the file cache store
-        // so that throttle middleware never touches DatabaseStore::increment().
+        // so throttle middleware never calls DatabaseStore::increment().
         $this->app->singleton(RateLimiter::class, function ($app) {
             return new RateLimiter($app->make('cache')->store('file'));
         });
