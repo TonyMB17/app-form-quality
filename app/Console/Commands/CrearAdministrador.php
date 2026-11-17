@@ -29,19 +29,11 @@ class CrearAdministrador extends Command
             foreach ($validator->errors()->all() as $message) $this->error($message);
             return self::FAILURE;
         }
-        try {
-            DB::beginTransaction();
-            $user = new User(['name' => $data['name'], 'dni' => $data['dni'], 'password' => $data['password']]);
-            $user->role = 'administrador';
-            $user->save();
-            foreach ($ids as $id) {
-                DB::table('administrador_establecimiento')->insert(['user_id' => $user->id, 'establecimiento_id' => $id]);
-            }
-            DB::commit();
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            $this->error('Error al crear el administrador: ' . $e->getMessage());
-            return self::FAILURE;
+        $user = new User(['name' => $data['name'], 'dni' => $data['dni'], 'password' => $data['password']]);
+        $user->role = 'administrador';
+        $user->save();
+        foreach ($ids as $id) {
+            DB::table('administrador_establecimiento')->insert(['user_id' => $user->id, 'establecimiento_id' => $id]);
         }
         $this->info('Administrador creado con '.$ids->count().' establecimientos autorizados.');
         return self::SUCCESS;
