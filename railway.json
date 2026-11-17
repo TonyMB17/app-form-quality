@@ -6,6 +6,7 @@
   "deploy": {
     "preDeployCommand": [
       "php artisan migrate --force",
+      "php artisan db:seed --class=EncuestaItemsSeeder --force",
       "php artisan config:clear",
       "php artisan cache:clear"
     ],

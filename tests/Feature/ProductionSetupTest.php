@@ -33,4 +33,15 @@ class ProductionSetupTest extends TestCase
         $this->assertDatabaseCount('periodos', 0);
         $this->assertDatabaseCount('items', 22);
     }
+
+    public function test_production_catalog_can_be_loaded_on_every_deployment(): void
+    {
+        $this->app->detectEnvironment(fn () => 'production');
+        foreach (range(1, 2) as $_) {
+            $this->artisan('db:seed', ['--class' => 'EncuestaItemsSeeder', '--force' => true])->assertSuccessful();
+        }
+        $this->assertSame(range(1, 22), \Illuminate\Support\Facades\DB::table('items')->orderBy('numero')->pluck('numero')->all());
+        $this->assertDatabaseCount('users', 0);
+        $this->assertDatabaseCount('periodos', 0);
+    }
 }
