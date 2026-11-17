@@ -61,7 +61,9 @@ return [
                 env('MYSQL_ATTR_SSL_CA') ? [PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA')] : [],
                 [
                     PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
-                    PDO::ATTR_AUTOCOMMIT => 1, // Railway MySQL starts with autocommit=0, causing "active transaction" errors
+                    PDO::ATTR_AUTOCOMMIT => 1,
+                    // Force SET autocommit=1 on the MySQL server side — Railway sets autocommit=0 by default
+                    PDO::MYSQL_ATTR_INIT_COMMAND => 'SET autocommit=1',
                 ]
             ) : [],
         ],
@@ -85,7 +87,9 @@ return [
                 env('MYSQL_ATTR_SSL_CA') ? [PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA')] : [],
                 [
                     PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
-                    PDO::ATTR_AUTOCOMMIT => 1, // Railway MySQL starts with autocommit=0, causing "active transaction" errors
+                    PDO::ATTR_AUTOCOMMIT => 1,
+                    // Force SET autocommit=1 on the MySQL server side — Railway sets autocommit=0 by default
+                    PDO::MYSQL_ATTR_INIT_COMMAND => 'SET autocommit=1',
                 ]
             ) : [],
         ],
