@@ -29,6 +29,10 @@ class CrearAdministrador extends Command
             foreach ($validator->errors()->all() as $message) $this->error($message);
             return self::FAILURE;
         }
+        // Railway console keeps an implicit PDO transaction open.
+        // Reconnect to get a clean connection with autocommit, then commit explicitly.
+        DB::reconnect();
+        DB::statement('SET autocommit=1');
         $user = new User(['name' => $data['name'], 'dni' => $data['dni'], 'password' => $data['password']]);
         $user->role = 'administrador';
         $user->save();
