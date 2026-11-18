@@ -373,3 +373,28 @@
 .respondent-stats .account-footnote{margin-top:10px!important;padding-left:10px;border-left:3px solid #d7cce2;line-height:1.55}
 @media(max-width:760px){.respondent-stats .account-progress-row{grid-template-columns:28px minmax(0,1fr)}.respondent-stats .account-goal{grid-column:2;padding:9px 0 0;border-top:1px solid #eceaf0;border-left:0}}
 @media(max-width:520px){.respondent-stats .respondent-summary{grid-template-columns:1fr}.respondent-summary>div+div{border-top:1px solid var(--admin-line);border-left:0}.goal-summary>div{display:grid;justify-items:center;gap:3px;padding:9px 6px;text-align:center}.goal-summary>div+div{border-left:1px solid var(--admin-line)}.accounts-heading{flex-direction:column;gap:8px}.respondent-stats .account-progress-row{padding:10px}.respondent-stats .account-identity>span{white-space:normal}.respondent-stats .account-goal{grid-column:1/-1}.respondent-stats .account-goal-heading>strong{font-size:13px}}
+.account-row-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;max-width:240px}
+.account-row-actions .quiet-button{display:inline-flex;align-items:center;gap:6px;padding:8px 10px;min-height:36px;font-size:12px}
+.account-row-actions .detail-link{flex-basis:100%}
+.account-name-status{display:grid;justify-items:start;gap:7px}
+.account-status{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:20px;background:#efedf2;color:#6f6878;font-size:11px;font-weight:700}
+.account-status.is-active{background:#e8f5ed;color:#217450}
+.account-delete-link{color:#a33343!important}
+.account-dialog{width:min(540px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow-y:auto;border:1px solid #e6ddf0;border-radius:22px;padding:28px;color:#30283d;background:#fff;box-shadow:0 24px 80px #23152d33}
+.account-dialog::backdrop{background:#21152f88;backdrop-filter:blur(3px)}
+.account-dialog header,.account-dialog footer{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.account-dialog h2{font-size:24px;line-height:1.25;margin:18px 0}
+.account-dialog p{line-height:1.6}
+.account-dialog .eyebrow{margin-bottom:0;font-size:11px}
+.account-action-person{display:grid;gap:2px;padding:14px 16px;border-radius:12px;background:#f7f4fa;overflow-wrap:anywhere}
+.account-action-person span{font-size:13px;color:#72687d}
+.account-action-icon{display:grid;place-items:center;width:46px;height:46px;border-radius:14px;background:#f0e8fa;color:#7950ac}
+.account-action-icon.is-danger{color:#a33343;background:#fcecef}
+.account-delete-confirm{margin:20px 0;display:grid;gap:8px}
+.account-delete-confirm label{font-size:13px}
+.account-delete-confirm input{width:100%;box-sizing:border-box;border:1px solid #cfc0df;border-radius:10px;padding:12px;font:inherit;color:inherit;background:#fff}
+.account-dialog footer{margin-top:24px;justify-content:flex-end;flex-wrap:wrap}
+.account-danger-button{border:0;border-radius:10px;background:#aa3547;color:white;padding:12px 16px;font:inherit;font-weight:700;cursor:pointer}
+.account-danger-button:disabled{opacity:.5;cursor:not-allowed}
+.account-dialog button:focus-visible,.account-dialog input:focus-visible{outline:3px solid #b69ad5;outline-offset:3px}
+@media(max-width:520px){.account-dialog{padding:20px}.account-dialog footer{flex-direction:column-reverse;align-items:stretch}.account-dialog footer button{width:100%}.account-row-actions{max-width:none}}

@@ -105,7 +105,8 @@ class EncuestaController extends Controller
         try {
             $id = DB::transaction(function () use ($data, $eess, $r, $inicio, $photo, &$photoPath) {
                 SurveyAccess::check((int) $inicio['periodo']);
-                DB::table('users')->where('id', $r->user()->id)->lockForUpdate()->first();
+                $activeUser = DB::table('users')->where('id', $r->user()->id)->lockForUpdate()->first();
+                abort_unless($activeUser && $activeUser->activo && (int) $activeUser->auth_version === (int) $r->user()->auth_version, 403, 'Esta cuenta ya no tiene acceso.');
                 DB::table('establecimientos')->where('id', $eess->id)->lockForUpdate()->first();
                 $existente = DB::table('encuestas')->where('envio_id', $inicio['id'])->first();
                 if ($existente) { return $existente->id; }
@@ -161,7 +162,8 @@ class EncuestaController extends Controller
             $record = $this->editableRecord($r, $encuesta);
             SurveyAccess::check($record->periodo_id);
             $before = DB::table('respuestas')->where('encuesta_id', $encuesta)->orderBy('item')->get(['item','expectativa','percepcion']);
-            DB::table('users')->where('id', $r->user()->id)->lockForUpdate()->first();
+            $activeUser = DB::table('users')->where('id', $r->user()->id)->lockForUpdate()->first();
+            abort_unless($activeUser && $activeUser->activo && (int) $activeUser->auth_version === (int) $r->user()->auth_version, 403, 'Esta cuenta ya no tiene acceso.');
             $this->editableRecord($r, $encuesta);
             foreach ($data['respuestas'] as $answer) {
                 DB::table('respuestas')->updateOrInsert(['encuesta_id' => $encuesta, 'item' => $answer['item']], ['expectativa' => $answer['expectativa'], 'percepcion' => $answer['percepcion']]);

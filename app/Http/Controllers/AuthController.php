@@ -29,12 +29,13 @@ class AuthController extends Controller
         if (RateLimiter::tooManyAttempts($key, 5)) {
             throw ValidationException::withMessages(['dni' => 'Demasiados intentos. Intenta nuevamente en '.RateLimiter::availableIn($key).' segundos.']);
         }
-        if (! Auth::attempt($credentials)) {
+        if (! Auth::attempt($credentials + ['activo' => true])) {
             RateLimiter::hit($key, 60);
             throw ValidationException::withMessages(['dni' => 'DNI o contraseña incorrectos.']);
         }
         RateLimiter::clear($key);
         $request->session()->regenerate();
+        $request->session()->put('auth_version', $request->user()->auth_version);
 
         return redirect()->intended($request->user()->role === 'administrador' ? '/tablero' : '/mi-establecimiento');
     }

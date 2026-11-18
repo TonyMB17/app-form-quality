@@ -60,3 +60,11 @@ No subas respaldos `.sql` con datos a GitHub; el único SQL versionado es el esq
 - [Referencia histórica de Excel](docs/REFERENCIA_EXCEL.md)
 
 Los planes históricos pueden contener decisiones reemplazadas. Este README describe el comportamiento vigente.
+
+## Desactivación y eliminación de digitadores
+
+En Usuarios, desactivar bloquea nuevos accesos y revoca las sesiones anteriores, conservando encuestas y fotografías. Reactivar permite iniciar una sesión nueva. Estas acciones y la eliminación se limitan a digitadores del ámbito del administrador; las cuentas administrativas están protegidas.
+
+Eliminar requiere revisar la cantidad de encuestas y, en un segundo paso, escribir `ELIMINAR` seguido del DNI. Se borran cuenta, encuestas, respuestas, historial de cambios y fotografías. Si cambió la cantidad de encuestas, se exige actualizar la lista y confirmar otra vez. Si existen encuestas históricas fuera del ámbito del administrador, se bloquea la eliminación.
+
+Antes de usar esta versión, ejecutar `php artisan migrate --force` para añadir el estado de cuenta, la versión de sesión y el registro de fotografías pendientes. Las fotos se eliminan después de confirmar la transacción de base de datos. Ante un fallo de almacenamiento, el mensaje informa que hay limpieza pendiente; se reintenta con `php artisan encuestas:limpiar-fotos-eliminadas`. El comando también está programado cada cinco minutos, siempre que el servidor ejecute el scheduler de Laravel (`php artisan schedule:run` cada minuto). El despliegue actual no garantiza que ese scheduler esté configurado.

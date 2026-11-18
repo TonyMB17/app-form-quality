@@ -18,6 +18,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/administracion/usuarios', [\App\Http\Controllers\Administracion\UsuarioController::class, 'store']);
     Route::get('/administracion/usuarios/{usuario}/editar', [\App\Http\Controllers\Administracion\UsuarioController::class, 'edit'])->whereNumber('usuario');
     Route::put('/administracion/usuarios/{usuario}', [\App\Http\Controllers\Administracion\UsuarioController::class, 'update'])->whereNumber('usuario');
+    Route::patch('/administracion/usuarios/{usuario}/estado', [\App\Http\Controllers\Administracion\UsuarioController::class, 'state'])->whereNumber('usuario');
+    Route::delete('/administracion/usuarios/{usuario}', [\App\Http\Controllers\Administracion\UsuarioController::class, 'destroy'])->whereNumber('usuario');
     Route::get('/administracion/encuesta', [\App\Http\Controllers\SurveySettingsController::class, 'index']);
     Route::put('/administracion/encuesta', [\App\Http\Controllers\SurveySettingsController::class, 'update']);
     Route::delete('/administracion/encuesta/{periodo}', [\App\Http\Controllers\SurveySettingsController::class, 'destroy'])->whereNumber('periodo');

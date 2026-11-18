@@ -42,6 +42,8 @@ class User extends Authenticatable
     {
         return [
             'password' => 'hashed',
+            'activo' => 'boolean',
+            'auth_version' => 'integer',
         ];
     }
 
