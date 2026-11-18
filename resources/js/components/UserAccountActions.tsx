@@ -7,8 +7,8 @@ type Account = { id: number; name: string; dni: string; activo: boolean; encuest
 export default function UserAccountActions({ user }: { user: Account }) {
     const [action, setAction] = useState<'state' | 'delete' | null>(null);
     return <>
-        <button type="button" className="quiet-button" onClick={() => setAction('state')}><Power size={15} aria-hidden="true" />{user.activo ? 'Desactivar' : 'Reactivar'}</button>
-        <button type="button" className="quiet-button account-delete-link" onClick={() => setAction('delete')}><Trash2 size={15} aria-hidden="true" />Eliminar</button>
+        <button type="button" className={`account-action-button ${user.activo ? 'account-action-neutral' : 'account-action-reactivate'}`} aria-label={`${user.activo ? 'Desactivar' : 'Reactivar'} a ${user.name}`} onClick={() => setAction('state')}><Power size={16} aria-hidden="true" />{user.activo ? 'Desactivar' : 'Reactivar'}</button>
+        <button type="button" className="account-action-button account-action-delete" aria-label={`Eliminar a ${user.name}`} onClick={() => setAction('delete')}><Trash2 size={16} aria-hidden="true" />Eliminar</button>
         {action && <AccountDialog user={user} action={action} onClose={() => setAction(null)} />}
     </>;
 }
