@@ -412,3 +412,16 @@
 .account-danger-button:disabled{opacity:.5;cursor:not-allowed}
 .account-dialog button:focus-visible,.account-dialog input:focus-visible{outline:3px solid #b69ad5;outline-offset:3px}
 @media(max-width:520px){.account-dialog{padding:20px}.account-dialog footer{flex-direction:column-reverse;align-items:stretch}.account-dialog footer button{width:100%}.account-row-actions{max-width:none}}
+.searchable-filter{position:relative;min-width:0}
+.searchable-filter-control{display:flex;align-items:center;gap:8px;border:1px solid #d9cbe9;border-radius:10px;background:#fff;padding:0 12px;color:#887198}
+.searchable-filter-control:focus-within{outline:3px solid #eee5f8;border-color:#9571b7}
+.auth-card .searchable-filter-control input{min-width:0;width:100%;border:0;background:transparent;outline:none;padding:12px 0;box-shadow:none;color:#3d3249;text-overflow:ellipsis}
+.searchable-filter-control>svg{flex-shrink:0}
+.searchable-filter-control button{display:grid;place-items:center;padding:6px;border:0;background:transparent;color:inherit;cursor:pointer}
+.searchable-filter-menu{position:absolute;top:100%;left:0;right:0;z-index:50;margin-top:6px;background:#fff;border:1px solid #e3d8ed;border-radius:12px;box-shadow:0 12px 35px #35204e20;overflow:hidden}
+.searchable-filter-count{display:block;padding:9px 12px;color:#85758f;font-size:11px;border-bottom:1px solid #f0eaf5}
+.searchable-filter-menu ul{list-style:none;margin:0;padding:5px;max-height:260px;overflow-y:auto;overscroll-behavior:contain}
+.searchable-filter-menu li{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 9px;border-radius:7px;font-size:13px;line-height:1.5;color:#4a3c58;cursor:pointer;overflow-wrap:anywhere}
+.searchable-filter-menu li svg{flex-shrink:0;color:#7650a9}
+.searchable-filter-menu li.is-highlighted,.searchable-filter-menu li:hover{background:#f2eaf9}
+.filter-search-hint{grid-column:1/-1;margin:0!important;font-size:12px!important;color:#7a6c87}

@@ -53,7 +53,7 @@ class TableroTest extends TestCase
     {
         $eess = User::sole()->establecimiento_id;
         $this->survey($eess, 1);
-        $otherDigitador = User::create(['name' => 'Digitador alterno', 'dni' => '99000020', 'password' => 'test-password']);
+        $otherDigitador = User::create(['name' => 'Zzz digitador alterno', 'dni' => '99000020', 'password' => 'test-password']);
         $otherDigitador->role = 'digitador';
         $otherDigitador->establecimiento_id = $eess;
         $otherDigitador->save();

@@ -1,4 +1,5 @@
 import QuestionCode from '../components/QuestionCode';
+import SearchableFilter from '../components/SearchableFilter';
 import RespondentStats, { type RespondentData } from '../components/RespondentStats';
 import ResultsComparison, { type ComparisonRow } from '../components/ResultsComparison';
 import ResultsOverview, { StatusBadge } from '../components/ResultsOverview';
@@ -43,16 +44,21 @@ export default function Tablero(p: Props) {
         const next: Filtros = { ...p.filtros, [key]: value };
         if (key === 'microred') next.eess = '';
         if (key === 'microred' || key === 'eess') next.digitador = '';
-        router.get('/tablero', Object.fromEntries(Object.entries(next).filter(([, v]) => v !== '' && v != null)), { preserveState: true, preserveScroll: true });
+        router.get('/tablero', Object.fromEntries(Object.entries(next).filter(([, v]) => v !== '' && v != null)), {
+            preserveState: true, preserveScroll: true, replace: true,
+            only: ['filtros', 'digitadores', 'resumen', 'dimensiones', 'items', 'encuestas', 'actualizado', 'comparacion', 'datos_generales'],
+            onSuccess: () => setFallo(false), onError: () => setFallo(true),
+        });
     }
     return <><AppHeader active="resultados" admin={!p.es_digitador} /><main className={`workspace dashboard ${!p.es_digitador ? 'admin-view' : ''}`}><Head title="Tablero de encuestas" />
 
         <AdminPageHeader context="Seguimiento de la atención" title="Resultados" description="Encuestas del ámbito autorizado." support={<details className="dashboard-methodology"><summary>Datos de prueba y metodología</summary><p>Incluye encuestas ficticias. Criterio provisional: satisfecho si P−E ≥ 0; No aplica, Sin respuesta y vacíos se excluyen. Los porcentajes se calculan sobre pares válidos.</p></details>} />
         <section className="auth-card filters" aria-label="Filtros del tablero">
-            <div><label htmlFor="microred">Microred</label><select id="microred" value={p.filtros.microred ?? ''} onChange={e => filtrar('microred', e.target.value)}><option value="">Todas las autorizadas</option>{[...new Set(p.catalogo.map(o => o.microred))].map(m => <option key={m}>{m}</option>)}</select></div>
-            <div><label htmlFor="eess">Establecimiento</label><select id="eess" value={p.filtros.eess ?? ''} onChange={e => filtrar('eess', e.target.value)}><option value="">Todos los autorizados</option>{p.catalogo.filter(o => !p.filtros.microred || o.microred === p.filtros.microred).map(o => <option value={o.id} key={o.id}>{o.codigo_renipress} · {o.nombre}</option>)}</select></div>
-            <div><label htmlFor="digitador">Digitador</label><select id="digitador" value={p.filtros.digitador ?? ''} onChange={e => filtrar('digitador', e.target.value)}><option value="">Todos los digitadores</option>{p.digitadores.map(d => <option value={d.id} key={d.id}>{d.nombre} · {d.establecimiento}</option>)}</select></div>
-            <button className="quiet-button" onClick={() => router.get('/tablero')} disabled={!p.filtros.microred && !p.filtros.eess && !p.filtros.digitador}>Limpiar filtros</button>
+            <SearchableFilter id="microred" label="Microred" value={p.filtros.microred ?? ''} allLabel="Todas las autorizadas" options={[...new Set(p.catalogo.map(o => o.microred))].filter(Boolean).map(m => ({ value: m, label: m }))} disabled={cargando} onChange={value => filtrar('microred', value)} />
+            <SearchableFilter id="eess" label="Establecimiento" value={String(p.filtros.eess ?? '')} allLabel="Todos los autorizados" options={p.catalogo.filter(o => !p.filtros.microred || o.microred === p.filtros.microred).map(o => ({ value: String(o.id), label: `${o.codigo_renipress} · ${o.nombre}` }))} disabled={cargando} onChange={value => filtrar('eess', value)} />
+            <SearchableFilter id="digitador" label="Digitador" value={String(p.filtros.digitador ?? '')} allLabel="Todos los digitadores" options={p.digitadores.map(d => ({ value: String(d.id), label: `${d.nombre} · ${d.establecimiento}` }))} disabled={cargando} onChange={value => filtrar('digitador', value)} />
+            <button className="quiet-button" onClick={() => router.get('/tablero', {}, { preserveState: true, preserveScroll: true, replace: true })} disabled={cargando || (!p.filtros.microred && !p.filtros.eess && !p.filtros.digitador)}>Limpiar filtros</button>
+            <p className="filter-search-hint" role="status">{cargando ? 'Actualizando resultados…' : 'Escribe para buscar y selecciona una coincidencia. Los resultados se actualizan automáticamente.'}</p>
         </section>
         <div className="actions refresh-toolbar"><label><input type="checkbox" checked={automatico} onChange={e => setAutomatico(e.target.checked)} /> Actualizar cada 30 segundos</label><button disabled={cargando} onClick={actualizar}>{cargando ? 'Actualizando…' : 'Actualizar ahora'}</button><span className="refresh-status" role="status">Última actualización: {p.actualizado} · Lima</span></div>
         {fallo && <p role="alert">No se pudo actualizar. Se conservan los últimos datos recibidos.</p>}

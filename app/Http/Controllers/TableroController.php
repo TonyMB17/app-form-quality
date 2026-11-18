@@ -92,7 +92,7 @@ class TableroController extends Controller
             ->orderBy('u.name')->get(['u.id', 'u.name', 's.nombre as establecimiento', 's.microred', 's.meta_encuestas'])
             ->when(!empty($filters['digitador']), fn ($users) => $users->where('id', $filters['digitador']))
             ->map(fn ($u) => ['id' => $u->id, 'nombre' => $u->name, 'establecimiento' => $u->establecimiento, 'microred' => $u->microred,
-                'encuestas' => (int) ($byUser[$u->id] ?? 0), 'realizadas' => (int) ($avanceMeta[$u->id] ?? 0), 'meta' => (int) $u->meta_encuestas]);
+                'encuestas' => (int) ($byUser[$u->id] ?? 0), 'realizadas' => (int) ($avanceMeta[$u->id] ?? 0), 'meta' => (int) $u->meta_encuestas])->values();
         return Inertia::render('Tablero', [
             'datos_generales' => ['distribuciones' => $demographics, 'cuentas' => $accounts, 'microredes' => (clone $q)->select('s.microred as nombre')->selectRaw('COUNT(*) as total')->groupBy('s.microred')->get(),
                 'periodo_meta' => $periodoMeta ? ['id' => $periodoMeta->id, 'nombre' => $periodoMeta->nombre] : null],
