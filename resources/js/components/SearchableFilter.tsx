@@ -15,7 +15,7 @@ export default function SearchableFilter({ id, label, value, options, allLabel, 
     const matches = [{ value: '', label: allLabel }, ...options].filter(option => normalize(option.label).includes(normalize(query)));
     useEffect(() => { setOpen(false); setQuery(''); setActive(0); }, [value, disabled]);
     function choose(option: Option) { setOpen(false); setQuery(''); onChange(option.value); input.current?.focus(); }
-    return <div className="searchable-filter" onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) { setOpen(false); setQuery(''); } }}>
+    return <div className={`searchable-filter ${value ? 'has-selection' : ''}`} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) { setOpen(false); setQuery(''); } }}>
         <label htmlFor={id}>{label}</label>
         <div className="searchable-filter-control"><Search size={16} aria-hidden="true" />
             <input ref={input} id={id} role="combobox" autoComplete="off" aria-autocomplete="list" aria-expanded={open} aria-controls={`${id}-options`} aria-activedescendant={open && matches[active] ? `${id}-option-${active}` : undefined} disabled={disabled} value={open ? query : selected} placeholder="Escribe para buscar…" onFocus={() => { setOpen(true); setQuery(''); setActive(0); }} onClick={() => setOpen(true)} onChange={event => { setQuery(event.target.value); setOpen(true); setActive(0); }} onKeyDown={event => {
